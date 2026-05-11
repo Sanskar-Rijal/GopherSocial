@@ -5,12 +5,12 @@ services:
       - 5432:5432
     environment:
       POSTGRES_USER: sanskar
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydb
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: social
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sanskar -d mydb"]
+      test: ["CMD-SHELL", "pg_isready -U sanskar -d social"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,6 +21,8 @@ services:
       - 8080:8080
     env_file:
       - ./Social/.envrc
+    environment:
+      DB_ADDR: "postgres://sanskar:adminpassword@db:5432/social?sslmode=disable"
     volumes:
       - ./Social:/usr/src/app
     depends_on:
