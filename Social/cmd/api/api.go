@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"social/internal/store"
 	"time"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -18,6 +17,7 @@ type application struct {
 type config struct {
 	addr string //address of the port we want to listen on
 	db dbConfig
+	env string
 }
 
 type dbConfig struct {
