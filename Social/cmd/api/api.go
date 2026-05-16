@@ -43,6 +43,11 @@ func (app *application) mount() http.Handler {
 
 	router.Route("/v1", func (r chi.Router){
 		r.Get("/health",app.healthCheckHandler)
+
+		//creating request for post (add, delete, edit etc)
+		r.Route("/posts", func ( r chi.Router){
+			r.Post("/",app.createPostHandler)
+		})
 	})
 
 
