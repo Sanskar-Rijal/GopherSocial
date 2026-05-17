@@ -1,8 +1,12 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"social/internal/store"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type CreatePostPayload struct {
@@ -11,6 +15,7 @@ type CreatePostPayload struct {
 	Tags []string `json:"tags"`
 }
 
+//Create Post
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request){
 
 	var userId int64 = 1 
@@ -20,7 +25,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	err := readJson(w,r, &payload)
 
 	if err != nil {
-		writeJson(w,http.StatusBadRequest, err.Error())
+		app.internalServerError(w,r,err)
 		return 
 	}
 
@@ -45,8 +50,47 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := writeJson(w, http.StatusOK, data); err != nil {
-		errorJson(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w,r,err)
 		return
+	}
+
+}
+
+
+//GetPost by Id 
+func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Request){
+
+	idParam := chi.URLParam(r, "postID")
+	postId, err := strconv.ParseInt(idParam, 10, 64)
+
+	if err != nil {
+		writeJson(w, http.StatusInternalServerError, err.Error())
+	}
+
+	ctx := r.Context()
+
+	post, err := app.store.Posts.GetById(ctx, postId)
+
+	if err != nil {
+		switch{
+			//if not found in database we send 404 error
+		case errors.Is(err, store.ErrNotFound):
+			app.notFoundError(w,r, err)
+		//else return internal server error 
+		default: 
+			writeJson(w, http.StatusInternalServerError, err.Error())
+		}
+	return 
+	}
+
+	//send the data to the user 
+	if err := writeJson(w, http.StatusOK, map[string]any{
+		"status":"true",
+		"message":post,
+		"env":app.config.env,
+	}); err != nil {
+		writeJson(w, http.StatusInternalServerError, err.Error())
+		return 
 	}
 
 }

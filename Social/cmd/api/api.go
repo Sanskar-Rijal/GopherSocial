@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"social/internal/store"
 	"time"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -41,12 +43,30 @@ func (app *application) mount() http.Handler {
     router.Use(middleware.Logger)
     router.Use(middleware.Recoverer)
 
+
+	//when no route matches then 
+	router.NotFound(func(w http.ResponseWriter , r *http.Request){
+		app.notFoundError(w,r,fmt.Errorf("Route not found %s", r.URL.Path))
+	} )
+
+	//Method Not Allowed - route exists but method is not allowed 
+	// example route is GET /posts
+	router.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request){
+		app.methodNotAllowedError(w,r,fmt.Errorf("method not allowed %s", r.Method))
+	})
+
 	router.Route("/v1", func (r chi.Router){
 		r.Get("/health",app.healthCheckHandler)
 
 		//creating request for post (add, delete, edit etc)
 		r.Route("/posts", func ( r chi.Router){
+			//create post
 			r.Post("/",app.createPostHandler)
+			//get post by id 
+			r.Route("/{postID}", func(r chi.Router){
+				r.Get("/", app.getPostByIdHandler)
+			})
+
 		})
 	})
 

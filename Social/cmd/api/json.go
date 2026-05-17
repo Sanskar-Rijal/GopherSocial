@@ -30,13 +30,3 @@ func readJson(w http.ResponseWriter, r *http.Request, data any) error {
 
 	return decoder.Decode(data)
 }
-
-
-//cerating a writer to send error json 
-func errorJson(w http.ResponseWriter, status int, message string) error {
-	type envelope struct {
-		Error string `json:"error"`
-	}
-
-	return writeJson(w,status, &envelope{Error: message} )
-}
