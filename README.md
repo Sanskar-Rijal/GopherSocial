@@ -26,7 +26,7 @@ GopherSocial is a backend service for a social media platform. It provides APIs 
 Start the entire stack with PostgreSQL:
 
 ```bash
-docker-compose up
+docker compose -f docker-compose.yaml up -d --build
 ```
 
 The API will be available at `http://localhost:8080`
