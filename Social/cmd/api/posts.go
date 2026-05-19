@@ -89,6 +89,16 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 	return 
 	}
 
+	//fetch comments for the post 
+	comments, err := app.store.Comments.GetCommentsFromPost(ctx, postId)
+
+	if err != nil {
+		writeJson(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	post.Comments = comments
+
 	//send the data to the user 
 	if err := writeJson(w, http.StatusOK, map[string]any{
 		"status":"true",

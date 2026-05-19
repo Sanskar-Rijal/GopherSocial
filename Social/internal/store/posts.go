@@ -19,12 +19,14 @@ type Post struct {
 	Tags []string `json:"tags"`
 	CreatedAt string `json:"created_at"` // postgres generates this — you need it back
 	UpdatedAt string `json:"updated_at"` // postgres generates this — you need it back
+	Comments []Comment `json:"comments"`
 }
 
 type PostStore struct {
 	db *sql.DB
 }
 
+//Create post
 func (s *PostStore) Create(ctx context.Context, post *Post) error {
 	query := `INSERT INTO posts (content, title, user_id, tags)
 	VALUES($1, $2, $3, $4) RETURNING id, created_at, updated_at
@@ -77,6 +79,5 @@ func (s *PostStore) GetById(ctx context.Context, id int64) (*Post, error) {
 				return nil, err
 			} 
 	}
-
 	return &post, nil
 }

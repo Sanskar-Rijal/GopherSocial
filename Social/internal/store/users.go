@@ -8,7 +8,7 @@ import (
 
 type User struct {
 	ID int64 `json:"id"`
-	Username string `json:"name"`
+	Username string `json:"username"`
 	Email string `json:"email"`
 	Password string `json:"-"` //we will not return password to the user
 	CreatedAt string `json:"created_at"`

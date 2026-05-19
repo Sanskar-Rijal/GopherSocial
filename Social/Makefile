@@ -12,4 +12,4 @@ migrate-up:
 
 .PHONY: migrate-down
 migrate-down:
-	@migrate -path ${MIGRATIONS_PATH} -database ${DB_ADDR} down
+	@migrate -path ${MIGRATIONS_PATH} -database ${DB_ADDR} down 1
