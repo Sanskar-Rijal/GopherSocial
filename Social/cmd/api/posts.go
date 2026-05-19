@@ -69,8 +69,10 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 	idParam := chi.URLParam(r, "postID")
 	postId, err := strconv.ParseInt(idParam, 10, 64)
 
+	//if error comes user is sending "abc" instead of 123 numbers etc
 	if err != nil {
-		writeJson(w, http.StatusInternalServerError, err.Error())
+		app.badRequestError(w,r,err)
+		return
 	}
 
 	ctx := r.Context()
@@ -109,4 +111,29 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 		return 
 	}
 
+}
+
+
+//Delete post 
+func (app *application) deletePostHandler(w http.ResponseWriter, r * http.Request){
+	idParam := chi.URLParam(r,"postID")
+	postID, err := strconv.ParseInt(idParam,10,64)
+
+	if err != nil {
+		app.badRequestError(w, r, err)
+	}
+
+	ctx := r.Context()
+	if err := app.store.Posts.Delete(ctx,postID); err != nil {
+		switch{
+		case errors.Is(err, store.ErrNotFound):
+			app.notFoundError(w,r,err)
+
+		default:
+			app.internalServerError(w,r,err)
+		}
+		return 
+	}
+	//post deleted successfully 
+	writeJson(w,http.StatusNoContent, nil);
 }

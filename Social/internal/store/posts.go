@@ -81,3 +81,29 @@ func (s *PostStore) GetById(ctx context.Context, id int64) (*Post, error) {
 	}
 	return &post, nil
 }
+
+//Delete post 
+func (s * PostStore) Delete(ctx context.Context, postID int64) error {
+	query := `DELETE FROM posts WHERE id = $1`
+
+	res, err := s.db.ExecContext(ctx, query, postID)
+
+	if err != nil {
+		return err
+	}
+
+	//Checking if any row is affected or not
+	//if none of the rows is affected, that means nothing is deleted, it means post doesn't exists
+	rows, err := res.RowsAffected()
+
+	if err != nil {
+		return err 
+	}
+
+	//if rows = 0 then nothing is delted, so we return "post not found"
+	if rows == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
