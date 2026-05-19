@@ -107,3 +107,31 @@ func (s * PostStore) Delete(ctx context.Context, postID int64) error {
 
 	return nil
 }
+
+
+//Update post using patch request 
+func (s *PostStore) Update(ctx context.Context, post *Post) error {
+	query := `UPDATE posts SET content= $1, title= $2,  updated_at = NOW() WHERE id = $3 RETURNING updated_at`
+
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		post.Content,
+		post.Title,
+		post.ID,
+	).Scan(
+		&post.UpdatedAt,
+	)
+
+	if err != nil {
+		switch{
+		case errors.Is(err,sql.ErrNoRows):
+			return ErrNotFound //it means post doesn't exits
+		default:
+			return err
+		}
+	}
+
+	return err;
+
+}
