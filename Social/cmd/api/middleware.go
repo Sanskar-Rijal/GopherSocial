@@ -37,7 +37,7 @@ func (app *application) postContextMiddleware(next http.Handler) http.Handler{
 			app.notFoundError(w,r, err)
 		//else return internal server error 
 		default: 
-			writeJson(w, http.StatusInternalServerError, err.Error())
+			app.internalServerError(w, r, err)
 		}
 	return 
 	}

@@ -186,8 +186,8 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 	//now passing payload to the store 
 	if err := app.store.Posts.Update(ctx,existingPost); err != nil {
 		switch{
-		case errors.Is(err, store.ErrNotFound):
-			app.notFoundError(w,r,err)
+		case errors.Is(err, store.ErrConflict):
+			app.conflictError(w,r,err) //409 someone else updated first
 		default:
 			app.internalServerError(w,r,err)
 		}

@@ -56,3 +56,13 @@ func (app *application) methodNotAllowedError(w http.ResponseWriter, r *http.Req
 			"env":app.config.env,
 		})
 }
+
+func (app *application) conflictError(w http.ResponseWriter, r * http.Request, err error){
+	log.Printf("conflict error: %s path: %s error: %s", r.Method, r.URL.Path, err.Error())
+
+	writeJson(w,http.StatusConflict, map[string]string{
+		"status":"false",
+		"message":err.Error(),
+		"env":app.config.env,
+	})
+}

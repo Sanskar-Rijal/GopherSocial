@@ -6,7 +6,8 @@ import (
 	"errors"
 )
 
-var (ErrNotFound = errors.New("Record not found"))
+var ErrNotFound = errors.New("Resource not found")
+var ErrConflict = errors.New("Resource Conflict")
 
 type Storage struct {
 	Posts interface {

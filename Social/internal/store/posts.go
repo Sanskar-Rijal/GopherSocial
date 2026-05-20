@@ -20,6 +20,7 @@ type Post struct {
 	CreatedAt string `json:"created_at"` // postgres generates this — you need it back
 	UpdatedAt string `json:"updated_at"` // postgres generates this — you need it back
 	Comments []Comment `json:"comments"`
+	Version int `json:"version"`
 }
 
 type PostStore struct {
@@ -54,7 +55,7 @@ func (s *PostStore) Create(ctx context.Context, post *Post) error {
 }
 
 func (s *PostStore) GetById(ctx context.Context, id int64) (*Post, error) {
-	query := `SELECT id, content, title, user_id, tags, created_at, updated_at FROM posts WHERE id = $1`
+	query := `SELECT id, content, title, user_id, tags, created_at, updated_at, version FROM posts WHERE id = $1`
 
 	var post Post
 	err := s.db.QueryRowContext(
@@ -69,6 +70,7 @@ func (s *PostStore) GetById(ctx context.Context, id int64) (*Post, error) {
 		pq.Array(&post.Tags),
 		&post.CreatedAt,
 		&post.UpdatedAt,
+		&post.Version,
 	)
 
 	if err != nil {
@@ -111,7 +113,7 @@ func (s * PostStore) Delete(ctx context.Context, postID int64) error {
 
 //Update post using patch request 
 func (s *PostStore) Update(ctx context.Context, post *Post) error {
-	query := `UPDATE posts SET content= $1, title= $2,  updated_at = NOW() WHERE id = $3 RETURNING updated_at`
+	query := `UPDATE posts SET content= $1, title= $2,  updated_at = NOW(), version = version +1 WHERE id = $3 AND version = $4 RETURNING updated_at, version`
 
 	err := s.db.QueryRowContext(
 		ctx,
@@ -119,19 +121,24 @@ func (s *PostStore) Update(ctx context.Context, post *Post) error {
 		post.Content,
 		post.Title,
 		post.ID,
+		post.Version,
 	).Scan(
 		&post.UpdatedAt,
+		&post.Version,
 	)
 
 	if err != nil {
 		switch{
 		case errors.Is(err,sql.ErrNoRows):
-			return ErrNotFound //it means post doesn't exits
+            // two possibilities:
+            // 1. post does not exist
+            // 2. version mismatch - someone else updated first
+			return ErrConflict 
 		default:
 			return err
 		}
 	}
 
-	return err;
+	return nil;
 
 }
