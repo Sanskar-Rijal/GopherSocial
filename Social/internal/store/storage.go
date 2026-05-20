@@ -4,10 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
-var ErrNotFound = errors.New("Resource not found")
-var ErrConflict = errors.New("Resource Conflict")
+var (
+	ErrNotFound = errors.New("Resource not found")
+	ErrConflict = errors.New("Resource Conflict")
+	QueryTimeoutDuration = time.Second * 5
+)
 
 type Storage struct {
 	Posts interface {
@@ -23,6 +27,7 @@ type Storage struct {
 
 	Comments interface {
 		GetCommentsFromPost(context.Context, int64) ([]Comment, error)
+		Create(context.Context, *Comment) error
 	}
 }
 

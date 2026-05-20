@@ -32,6 +32,11 @@ func (s *PostStore) Create(ctx context.Context, post *Post) error {
 	query := `INSERT INTO posts (content, title, user_id, tags)
 	VALUES($1, $2, $3, $4) RETURNING id, created_at, updated_at
 	`
+
+	//creating a time out 
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
 	err := s.db.QueryRowContext(
 		ctx,
 		 query, // the SQL string with $1 $2 $3 $4 placeholders
@@ -56,6 +61,10 @@ func (s *PostStore) Create(ctx context.Context, post *Post) error {
 
 func (s *PostStore) GetById(ctx context.Context, id int64) (*Post, error) {
 	query := `SELECT id, content, title, user_id, tags, created_at, updated_at, version FROM posts WHERE id = $1`
+
+	//creating a time out 
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
 
 	var post Post
 	err := s.db.QueryRowContext(
@@ -88,6 +97,10 @@ func (s *PostStore) GetById(ctx context.Context, id int64) (*Post, error) {
 func (s * PostStore) Delete(ctx context.Context, postID int64) error {
 	query := `DELETE FROM posts WHERE id = $1`
 
+	//creating a time out 
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
 	res, err := s.db.ExecContext(ctx, query, postID)
 
 	if err != nil {
@@ -114,6 +127,10 @@ func (s * PostStore) Delete(ctx context.Context, postID int64) error {
 //Update post using patch request 
 func (s *PostStore) Update(ctx context.Context, post *Post) error {
 	query := `UPDATE posts SET content= $1, title= $2,  updated_at = NOW(), version = version +1 WHERE id = $3 AND version = $4 RETURNING updated_at, version`
+
+	//creating a time out 
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
 
 	err := s.db.QueryRowContext(
 		ctx,
