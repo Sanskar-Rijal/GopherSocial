@@ -14,6 +14,9 @@ import (
 type postkey string
 const PostCtx postkey = "post"
 
+type userkey string
+const UserCtx userkey = "user"
+
 //middleware to fetch post and put it into the context of the request so that we can use it in the handlers
 func (app *application) postContextMiddleware(next http.Handler) http.Handler{
 	return http.HandlerFunc(func (w http.ResponseWriter, r * http.Request){
@@ -44,5 +47,35 @@ func (app *application) postContextMiddleware(next http.Handler) http.Handler{
 	//we never mutate context, we always create new context from scratch
 	ctx = context.WithValue(ctx,PostCtx,post)
 	next.ServeHTTP(w,r.WithContext(ctx))
+	})
+}
+
+//middleware to fetch userId from url 
+func (app *application) userContextMiddleware(next http.Handler) http.Handler{
+	return http.HandlerFunc( func (w http.ResponseWriter, r *http.Request){
+		idParam := chi.URLParam(r,"userID")
+		userId, err := strconv.ParseInt(idParam,10,64)
+
+		//if error comes then user is sending incorrect format 
+		if err != nil {
+			app.badRequestError(w,r,err)
+		}
+
+		//getting the actual context 
+		ctx := r.Context()
+
+		user, err := app.store.Users.GetById(ctx, userId)
+
+		if err != nil {
+			switch {
+			case errors.Is(err, store.ErrNotFound):
+				app.notFoundError(w,r,err)
+			default: 
+				app.internalServerError(w,r,err)
+			}
+			return
+		}
+		//creating new context and adding the user property in it 
+		ctx = context.WithValue(ctx,UserCtx,user)
 	})
 }

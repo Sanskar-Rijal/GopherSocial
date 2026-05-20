@@ -76,8 +76,12 @@ func (app *application) mount() http.Handler {
 			r.Route("/users", func(r chi.Router){
 
 				r.Route("/{userID}", func(r chi.Router){
-					
+
 				r.Get("/", app.getUserByIdHandler)
+				//Route to follow users /v1/users/{userID}/follow
+				r.Post("/follow",app.followUserHandler)
+				r.Post("/unfollow",app.unfollowUserHandler)
+
 			})
 			})
 	})

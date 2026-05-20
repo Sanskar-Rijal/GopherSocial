@@ -30,6 +30,10 @@ type Storage struct {
 		GetCommentsFromPost(context.Context, int64) ([]Comment, error)
 		Create(context.Context, *Comment) error
 	}
+	Followers interface{
+		FollowUser(context.Context, int64, int64) error
+		UnFollowUser(context.Context, int64, int64) error
+	}
 }
 
 
