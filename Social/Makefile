@@ -12,9 +12,12 @@ migrate-up:
 
 .PHONY: migrate-down
 migrate-down:
-	@migrate -path ${MIGRATIONS_PATH} -database ${DB_ADDR} down 1
-
+	@migrate -path ${MIGRATIONS_PATH} -database ${DB_ADDR} down 1	
 
 .PHONY: seed 
 seed:
 	@go run ./cmd/migrate/seed/main.go
+
+.PHONY: migrate-force
+migrate-force:
+	@migrate -path ${MIGRATIONS_PATH} -database ${DB_ADDR} force $(version)

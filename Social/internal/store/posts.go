@@ -126,7 +126,9 @@ func (s * PostStore) Delete(ctx context.Context, postID int64) error {
 
 //Update post using patch request 
 func (s *PostStore) Update(ctx context.Context, post *Post) error {
-	query := `UPDATE posts SET content= $1, title= $2,  updated_at = NOW(), version = version +1 WHERE id = $3 AND version = $4 RETURNING updated_at, version`
+	query := `UPDATE posts SET content= $1, title= $2,  
+	updated_at = NOW(), version = version +1 WHERE id = $3 AND version = $4 
+	RETURNING updated_at, version`
 
 	//creating a time out 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
