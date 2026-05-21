@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"social/internal/store"
-	"strconv"
-
-	"github.com/go-chi/chi/v5"
 )
 
 func getUserFromContext(r *http.Request) *store.User {
@@ -81,11 +78,29 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 
 
 func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Request){
-	idParam := chi.URLParam(r,"userID")
-	userId, err := strconv.ParseInt(idParam,10,64)
+	//this is the user we want to unfollow 
+	user := getUserFromContext(r)
 
-	if err != nil {
-		app.badRequestError(w,r,err)
+	//this is you, you are unfollowing someone else so you were the follower 
+	var followerId int64 =1; //To get later from jwt
+
+
+	//you cannot unfolow yourself 
+	if user.ID == followerId {
+		app.badRequestError(w,r, fmt.Errorf("You cannot unfollow yourself"))
 		return 
 	}
+
+	ctx := r.Context()
+
+	if err := app.store.Followers.UnFollowUser(ctx,followerId, user.ID); err != nil {
+		app.internalServerError(w,r,err)
+		return 
+	}
+
+	if err := writeJson(w,http.StatusNoContent,nil); err != nil {
+		app.internalServerError(w,r,err)
+		return 
+	}
+
 }

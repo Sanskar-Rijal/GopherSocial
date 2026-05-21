@@ -53,12 +53,14 @@ func (app *application) postContextMiddleware(next http.Handler) http.Handler{
 //middleware to fetch userId from url 
 func (app *application) userContextMiddleware(next http.Handler) http.Handler{
 	return http.HandlerFunc( func (w http.ResponseWriter, r *http.Request){
+
 		idParam := chi.URLParam(r,"userID")
 		userId, err := strconv.ParseInt(idParam,10,64)
 
 		//if error comes then user is sending incorrect format 
 		if err != nil {
 			app.badRequestError(w,r,err)
+			return 
 		}
 
 		//getting the actual context 
@@ -77,5 +79,6 @@ func (app *application) userContextMiddleware(next http.Handler) http.Handler{
 		}
 		//creating new context and adding the user property in it 
 		ctx = context.WithValue(ctx,UserCtx,user)
+		next.ServeHTTP(w,r.WithContext(ctx))
 	})
 }

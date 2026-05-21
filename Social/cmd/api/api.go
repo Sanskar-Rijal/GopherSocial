@@ -74,8 +74,10 @@ func (app *application) mount() http.Handler {
 		})
 		//users 
 			r.Route("/users", func(r chi.Router){
-
 				r.Route("/{userID}", func(r chi.Router){
+
+				//using middleware to fetch user from url 
+				r.Use(app.userContextMiddleware)
 
 				r.Get("/", app.getUserByIdHandler)
 				//Route to follow users /v1/users/{userID}/follow
