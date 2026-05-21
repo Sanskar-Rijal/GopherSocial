@@ -55,7 +55,7 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 
 	//this is you, you are followiing someone else so you are the follower and the 
 	//user in the url is the one you are following
-	var followerId int64 = 1; //To get later from jwt
+	var followerId int64 = 2; //To get later from jwt
 
 	//you cannot follow yourself 
 	if user.ID == followerId {
@@ -103,4 +103,52 @@ func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Reque
 		return 
 	}
 
+}
+
+func (app *application) getFollowersHandler(w http.ResponseWriter, r *http.Request){
+	user := getUserFromContext(r)
+
+	ctx := r.Context()
+
+	followers, err := app.store.Followers.GetFollowers(ctx,user.ID)
+
+	if err != nil {
+		app.internalServerError(w,r,err)
+		return 
+	}
+
+	data := map[string]any {
+		"status":"true",
+		"message":followers,
+		"env":app.config.env,
+	}
+
+	if err := writeJson(w,http.StatusOK, data); err != nil {
+		app.internalServerError(w,r,err)
+		return
+	}
+}
+
+func (app *application) getFollowingHandler(w http.ResponseWriter, r *http.Request){
+	user := getUserFromContext(r)
+
+	ctx := r.Context()
+
+	following, err := app.store.Followers.GetFollowing(ctx,user.ID)
+
+	if err != nil {
+		app.internalServerError(w,r,err)
+		return
+	}
+
+	data := map[string]any {
+		"status":"true",
+		"message":following, 
+		"env":app.config.env,
+	}
+
+	if err := writeJson(w, http.StatusOK, data); err != nil {
+		app.internalServerError(w,r,err)
+		return 
+	}
 }

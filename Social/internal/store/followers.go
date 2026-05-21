@@ -51,3 +51,75 @@ func (s *FollowerStore) UnFollowUser(ctx context.Context, followerId int64, user
 	}
 	return nil
 }
+
+
+func (s *FollowerStore) GetFollowers(ctx context.Context, userId int64) ([]Cuser, error){
+	query := `SELECT u.id, u.username FROM users AS u INNER JOIN followers AS f ON 
+	f.follower_id = u.id WHERE f.user_id =$1`;
+	//getting all users that follow userID
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		userId,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var followers []Cuser
+
+	for rows.Next(){
+		var u Cuser
+		err := rows.Scan(
+			&u.ID,
+			&u.Username,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+		followers = append(followers, u)
+	}
+	return followers, nil
+}
+
+func (s *FollowerStore) GetFollowing(ctx context.Context, userId int64) ([]Cuser, error){
+	query := `SELECT u.id, u.username FROM users AS u INNER JOIN followers AS f ON 
+	f.user_id = u.id WHERE f.follower_id =$1`;
+	
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		userId,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var following []Cuser
+
+	for rows.Next(){
+		var u Cuser
+		err := rows.Scan(
+			&u.ID,
+			&u.Username,
+		)
+		if err != nil {
+			return nil, err
+		}
+		following = append(following, u)
+	}
+	return following, nil
+}

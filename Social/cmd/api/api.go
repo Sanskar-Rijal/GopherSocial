@@ -84,6 +84,8 @@ func (app *application) mount() http.Handler {
 				r.Post("/follow",app.followUserHandler)
 				r.Post("/unfollow",app.unfollowUserHandler)
 
+				r.Get("/getfollowers", app.getFollowersHandler)
+				r.Get("/getfollowing", app.getFollowingHandler)
 			})
 			})
 	})

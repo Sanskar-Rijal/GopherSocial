@@ -33,6 +33,8 @@ type Storage struct {
 	Followers interface{
 		FollowUser(context.Context, int64, int64) error
 		UnFollowUser(context.Context, int64, int64) error
+		GetFollowers(context.Context, int64) ([]Cuser, error)
+		GetFollowing(context.Context, int64) ([]Cuser, error)
 	}
 }
 
