@@ -58,6 +58,11 @@ func (app *application) mount() http.Handler {
 	router.Route("/v1", func (r chi.Router){
 		r.Get("/health",app.healthCheckHandler)
 
+			//comments 
+		r.Route("/comments",func(r chi.Router){
+			r.Post("/", app.addCommentHandler)
+		})
+
 		//creating request for post (add, delete, edit etc)
 		r.Route("/posts", func ( r chi.Router){
 			//create post
@@ -74,6 +79,7 @@ func (app *application) mount() http.Handler {
 		})
 		//users 
 			r.Route("/users", func(r chi.Router){
+
 				r.Route("/{userID}", func(r chi.Router){
 
 				//using middleware to fetch user from url 
@@ -87,6 +93,11 @@ func (app *application) mount() http.Handler {
 				r.Get("/getfollowers", app.getFollowersHandler)
 				r.Get("/getfollowing", app.getFollowingHandler)
 			})
+
+			r.Group(func (r chi.Router){
+				
+			})
+
 			})
 	})
 
