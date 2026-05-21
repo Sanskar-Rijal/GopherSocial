@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"github.com/lib/pq"
 )
 
 type Follower struct {
@@ -28,9 +29,12 @@ func (s *FollowerStore) FollowUser(ctx context.Context, followerId int64, userId
 		followerId,
 	)
 	if err != nil {
-		//do something
-		return err
+		//do something because when user click follow then again click follow then 
+		//it will give error because primary key is uniuqe
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+		return ErrConflict
 	}
+}
 	return nil
 }
 

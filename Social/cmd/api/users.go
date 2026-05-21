@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"social/internal/store"
@@ -55,7 +56,7 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 
 	//this is you, you are followiing someone else so you are the follower and the 
 	//user in the url is the one you are following
-	var followerId int64 = 2; //To get later from jwt
+	var followerId int64 = 1; //To get later from jwt
 
 	//you cannot follow yourself 
 	if user.ID == followerId {
@@ -65,7 +66,12 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 
 	if err := app.store.Followers.FollowUser(ctx,followerId, user.ID); err != nil {
-		app.internalServerError(w,r,err)
+		switch {
+		case errors.Is(err, store.ErrConflict):
+			app.badRequestError(w,r,fmt.Errorf("You have already followed this user"))
+		default:
+			app.internalServerError(w,r,err)
+		}
 		return 
 	}
 
