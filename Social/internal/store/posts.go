@@ -19,8 +19,14 @@ type Post struct {
 	Tags []string `json:"tags"`
 	CreatedAt string `json:"created_at"` // postgres generates this — you need it back
 	UpdatedAt string `json:"updated_at"` // postgres generates this — you need it back
-	Comments []Comment `json:"comments"`
+	Comments []Comment `json:"comments,omitempty"`
+	User *Cuser `json:"user,omitempty"`
 	Version int `json:"version"`
+}
+
+type PostWithMetaData struct {
+	Post
+	CommentCount int `json:"comment_count"`
 }
 
 type PostStore struct {
@@ -161,3 +167,75 @@ func (s *PostStore) Update(ctx context.Context, post *Post) error {
 	return nil;
 
 }
+
+
+
+
+//User feed 
+func (s *PostStore) GetUserFeed(ctx context.Context, userId int64) ([]PostWithMetaData, error){
+
+	query :=
+	`select 
+		p.id,u.id as user_id,u.username, p.content,
+		 p.title, p.tags, p.created_at, p.version, 
+	count(c.id) as comment_count
+	from posts as p 
+	left join comments as c 
+	on 
+	p.id = c.post_id
+	inner join users as u
+	on 
+	u.id = p.user_id
+	inner join followers as f
+	on 
+	f.user_id = p.user_id
+	where f.follower_id = $1  OR p.user_id = $1
+	group by p.id, u.id
+	order by p.created_at DESC;`
+
+	ctx ,cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		userId,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var feed []PostWithMetaData
+	var user Cuser
+
+	for rows.Next(){
+		var p PostWithMetaData
+
+		err := rows.Scan(
+			&p.ID,
+			&p.UserId,
+			&user.Username, 
+			&p.Content,
+			&p.Title,
+			pq.Array(&p.Tags),
+			&p.CreatedAt,
+			&p.Version,
+			&p.CommentCount,
+		)
+
+		p.User = &user
+
+		if err != nil {
+			return nil, err
+		}
+
+		feed = append (feed, p)
+	}
+
+
+	return feed, nil 
+}
+

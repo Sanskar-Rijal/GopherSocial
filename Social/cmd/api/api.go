@@ -94,11 +94,11 @@ func (app *application) mount() http.Handler {
 				r.Get("/getfollowing", app.getFollowingHandler)
 			})
 
+			//user feed 
 			r.Group(func (r chi.Router){
-				
+				r.Get("/feed",app.getUserFeedHandler) //"/v1/users/feed"
 			})
-
-			})
+		})
 	})
 
 
