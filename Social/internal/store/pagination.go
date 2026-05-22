@@ -48,6 +48,12 @@ func (pq *PaginatedQuery) Parse(r *http.Request) error {
 		pq.Sort = sort
 	}
 
+	search := queryString.Get("search")
+	if search != ""{
+		pq.Search = search
+	}
+	
+
 	//Filter by tags 
 	// URL: ?tags=go,backend,docker
 	tags := queryString.Get("tags")

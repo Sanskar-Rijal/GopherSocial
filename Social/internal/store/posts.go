@@ -13,8 +13,8 @@ import (
 //using `json:"id"`
 type Post struct {
 	ID int64 `json:"id"` // postgres generates this — you need it back
-	Content string `json:"content"`
 	Title string `json:"title"`
+	Content string `json:"content"`
 	UserId int64 `json:"user_id"`
 	Tags []string `json:"tags"`
 	CreatedAt string `json:"created_at"` // postgres generates this — you need it back
@@ -188,8 +188,9 @@ func (s *PostStore) GetUserFeed(ctx context.Context, userId int64, paginatedQuer
 	u.id = p.user_id
 	inner join followers as f
 	on 
-	f.user_id = p.user_id
-	where f.follower_id = $1  OR p.user_id = $1
+	f.user_id = p.user_id 
+	where (f.follower_id = $1  OR p.user_id = $1) AND (p.title ILIKE '%' || $4 || '%' OR p.content ILIKE '%' || $4 || '%') 
+	AND (p.tags @> $5 OR $5 = '{}')
 	group by p.id, u.id
 	order by p.created_at ` + paginatedQuery.Sort + `
 	LIMIT $2 OFFSET $3
@@ -204,6 +205,8 @@ func (s *PostStore) GetUserFeed(ctx context.Context, userId int64, paginatedQuer
 		userId,
 		paginatedQuery.Limit,
 		paginatedQuery.Offset,
+		paginatedQuery.Search,
+		pq.Array(paginatedQuery.Tags),
 	)
 
 	if err != nil {
