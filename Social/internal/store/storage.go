@@ -19,7 +19,7 @@ type Storage struct {
 		GetById(context.Context, int64) (*Post, error)
 		Delete(context.Context, int64) error 
 		Update(context.Context, *Post) error
-		GetUserFeed(context.Context, int64) ([]PostWithMetaData, error)
+		GetUserFeed(context.Context, int64, *PaginatedQuery) ([]PostWithMetaData, error)
 
 	}
 	Users interface {
@@ -33,7 +33,7 @@ type Storage struct {
 		Update(context.Context, *Comment) error
 		Delete(context.Context, int64) error
 	}
-	Followers interface{
+	Followers interface {
 		FollowUser(context.Context, int64, int64) error
 		UnFollowUser(context.Context, int64, int64) error
 		GetFollowers(context.Context, int64) ([]Cuser, error)

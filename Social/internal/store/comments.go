@@ -9,7 +9,7 @@ import (
 //creating struct to send user details
 
 type Cuser struct {
-	ID int64 `json:"id"`
+	ID int64 `json:"id,omitempty"`
 	Username string `json:"username"`
 }
 
