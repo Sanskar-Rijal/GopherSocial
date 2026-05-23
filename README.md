@@ -1,79 +1,146 @@
 # GopherSocial
 
-A production-ready social media application backend built with Go, featuring REST APIs for users, posts, and comments. This project demonstrates best practices in Go application architecture, database management, and containerization.
+Social media backend built with Go. Features REST APIs for users, posts, comments, and followers — with pagination, search, filtering, and Swagger documentation.
 
-## Project Overview
+---
 
-GopherSocial is a backend service for a social media platform. It provides APIs for:
+## Screenshots
 
-- User management and authentication
-- Creating, reading, and managing posts
-- Adding and managing comments on posts
-- RESTful endpoints for all operations
+### Swagger UI
+
+![Swagger UI]()
+
+---
+
+## Features
+
+- Posts — create, read, update, delete
+- Comments — add and fetch comments on posts
+- Users — fetch user profiles
+- Followers — follow and unfollow users, get followers and following lists
+- Feed — paginated user feed with search and filter
+- Optimistic concurrency control on post updates
+- Full text search on posts using trigram indexes
+- Swagger API documentation
+- Database migrations
+- Hot reload with Air
+- Containerized with Docker
+
+---
 
 ## Technology Stack
 
-- **Language**: Go 1.25.0
-- **Web Framework**: [Chi Router](https://github.com/go-chi/chi)
-- **Database**: PostgreSQL
-- **Database Drivers**: pq (lib/pq)
-- **Validation**: go-playground/validator
-- **Containerization**: Docker & Docker Compose
-- **Migrations**: golang-migrate
+| Tool                    | Purpose                         |
+| ----------------------- | ------------------------------- |
+| Go 1.25                 | Language                        |
+| Chi Router              | HTTP routing and middleware     |
+| PostgreSQL 16           | Database                        |
+| lib/pq                  | Postgres driver                 |
+| golang-migrate          | Database migrations             |
+| go-playground/validator | Request validation              |
+| swaggo/http-swagger     | Swagger UI and docs generation  |
+| Air                     | Hot reload during development   |
+| Docker + Docker Compose | Containerization                |
+| direnv                  | Environment variable management |
 
-## Project Features
+## Running With Docker
 
-- **Optimistic Concurrency Control (OCC)**: Posts include versioning to prevent race conditions. When updating a post, the system checks if the version matches. If another client has modified the post (version mismatch), the update is rejected with a conflict error, ensuring data consistency without locking.
-- **Clean Architecture**: Separation of concerns with cmd, internal, and store layers
-- **Error Handling**: Custom error responses with meaningful messages
-- **JSON Serialization**: Utilities for consistent JSON encoding/decoding
-- **Input Validation**: Request validation using go-playground/validator
-- **Database Abstraction**: Storage interface for flexible data persistence
-- **Environment Configuration**: Flexible config via environment variables
-- **Docker Support**: Containerized deployment ready
-- **Database Migrations**: Version-controlled schema management
+```zsh
+# clone the repo
+git clone <your-repo-url>
+cd GopherSocial
 
-### Running the project with Docker Compose
+# start everything — postgres + backend
+docker-compose up --build
 
-Start the entire stack with PostgreSQL:
+# API available at
+http://localhost:8080
 
-```bash
-docker compose -f docker-compose.yaml up -d --build
+# Swagger docs at
+http://localhost:8080/v1/swagger/index.html
 ```
 
-The API will be available at `http://localhost:8080`
+---
 
-### Running Locally
+## Set Up Environment
 
-1. **Start PostgreSQL** (ensure it's running on localhost:5432)
+Your `.envrc` should contain:
 
-2. **Run database migrations**
-
-```bash
-make migrate-up
+```zsh
+export ADDR="your_sweet_port"
+export EXTERNAL_URL="localhost:your_sweet_port"
+export DB_ADDR="postgres://username:password@localhost:5432/databasename?sslmode=disable"
+export DB_MAX_OPEN_CONNS=30
+export DB_MAX_IDLE_CONNS=30
+export DB_MAX_IDLE_TIME="15m"
+export Go_ENV="development"
 ```
-
-3. **Build and run the API**
-
-```bash
-go run ./cmd/api/main.go
-```
-
-The API will listen on `:8080` (default) or the port specified in `ADDR` environment variable.
 
 ## Database Migrations
 
-Migrations are located in `cmd/migrate/migrations/` and managed using golang-migrate.
+Migrations live in `cmd/migrate/migrations/` and are managed with golang-migrate.
 
-### Available Commands
-
-```bash
-# Run pending migrations
+```zsh
+# run all pending migrations
 make migrate-up
 
-# Rollback one migration
+# rollback one migration
 make migrate-down
 
-# Create a new migration
+# create a new migration
 make migrate-create migration_name
+
+# force a version (when dirty database)
+make migrate-force version=6
 ```
+
+---
+
+## Architecture Decisions
+
+### Repository Pattern
+
+All database operations go through a `Storage` interface. Handlers never touch the database directly — they call methods on the interface. This makes the code testable and allows swapping implementations without changing handlers.
+
+```
+handler → Storage interface → PostStore → postgres
+```
+
+### Optimistic Concurrency Control
+
+Post updates use optimistic concurrency control to handle concurrent edits without locking rows.
+
+Every post has a `version` column starting at `1`. When updating, the query checks `WHERE id=$1 AND version=$2`. If someone else updated first, version changes and the update hits `0` rows — a `409 Conflict` is returned.
+
+```
+User 1 reads post → version=1
+User 2 reads post → version=1
+
+User 1 updates → version matches → saved → version becomes 2
+User 2 updates → version is now 2 → 0 rows affected → 409 Conflict
+```
+
+Why optimistic over pessimistic? Concurrent edits on the same post are rare in a social media app. Optimistic control avoids row locking which would slow reads under high traffic.
+
+### Dependency Injection
+
+The `application` struct receives its dependencies — `store`, `config` — from `main.go`. Nothing creates its own dependencies. This keeps the code loosely coupled and easy to test.
+
+### Database Indexes
+
+Indexes are added for all frequently searched and joined columns:
+
+```sql
+-- full text search on title and content
+CREATE INDEX idx_posts_title ON posts USING gin (title gin_trgm_ops);
+
+-- array search on tags
+CREATE INDEX idx_posts_tags ON posts USING gin (tags);
+
+-- exact match on foreign keys
+CREATE INDEX idx_posts_user_id     ON posts    (user_id);
+CREATE INDEX idx_comments_post_id  ON comments (post_id);
+CREATE INDEX idx_users_username    ON users    (username);
+```
+
+---
