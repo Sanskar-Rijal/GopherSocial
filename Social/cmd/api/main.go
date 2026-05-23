@@ -7,18 +7,51 @@ import (
 	"social/internal/store"
 )
 
+type ErrorResponseWrapper struct {
+	Status  bool   `json:"status" example:"false"`
+	Message string `json:"message"`
+	Env     string `json:"env" example:"development"`
+}
+
+type SuccessResponse[T any] struct {
+	Status  bool   `json:"status" example:"true"`
+	Env     string `json:"env" example:"development"`
+	Message T      `json:"message"`
+}
+
+//	@title			GopherSocial API (Social Media)
+//	@description	You can use endpoints and make your own frontend 😘
+//	@termsOfService	http://swagger.io/terms/
+
+//	@contact.name	API Support
+//	@contact.url	http://www.swagger.io/support
+//	@contact.email	support@swagger.io
+
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+
+//	@BasePath					/v1
+//
+//	@securityDefinitions.apikey	ApiKeyAuth
+//	@in							header
+//	@name						Authorization
+//	@description				Type "Bearer" followed by a space and JWT token.
+
+const version = "1.0.0"
+
 func main() {
 
 	cfg := config{
-			addr: env.GetString("ADDR",":8080"),
-			db: dbConfig{
-				addr: env.GetString("DB_ADDR","postgres://sanskar:adminpassword@localhost:5432/social?sslmode=disable"),
-				maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS",30),
-				maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS",30),
-				maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME","15m"),
-			},
-			env: env.GetString("Go_ENV","dev"),
-		}
+		addr:   env.GetString("ADDR", ":8080"),
+		apiURL: env.GetString("EXTERNAL_URL", "localhost:8080"),
+		db: dbConfig{
+			addr:         env.GetString("DB_ADDR", "postgres://sanskar:adminpassword@localhost:5432/social?sslmode=disable"),
+			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
+			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
+			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
+		},
+		env: env.GetString("Go_ENV", "dev"),
+	}
 
 	// app := &application{
 	// 	config: config{
@@ -45,7 +78,7 @@ func main() {
 
 	app := &application{
 		config: cfg,
-		store: store,
+		store:  store,
 	}
 
 	mux := app.mount()

@@ -6,11 +6,11 @@ import (
 )
 
 func GetString(key string, fallback string) string {
-	value, exists :=os.LookupEnv(key)
+	value, exists := os.LookupEnv(key)
 	if !exists {
 		return fallback
 	}
-	return value 
+	return value
 }
 
 func GetInt(key string, fallback int) int {
@@ -18,7 +18,7 @@ func GetInt(key string, fallback int) int {
 	if !exists {
 		return fallback
 	}
-	// converting the string value to int 
+	// converting the string value to int
 	valAsInt, err := strconv.Atoi(value)
 	if err != nil {
 		return fallback
@@ -31,9 +31,9 @@ func GetBool(key string, fallback bool) bool {
 	if !exists {
 		return fallback
 	}
-	//converting the string value to bool 
+	//converting the string value to bool
 	valAsBool, err := strconv.ParseBool(value)
-	if err !=nil {
+	if err != nil {
 		return fallback
 	}
 	return valAsBool

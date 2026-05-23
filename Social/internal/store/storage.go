@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("Resource not found")
-	ErrConflict = errors.New("Resource Conflict")
+	ErrNotFound          = errors.New("Resource not found")
+	ErrConflict          = errors.New("Resource Conflict")
 	QueryTimeoutDuration = time.Second * 5
 )
 
@@ -17,10 +17,9 @@ type Storage struct {
 	Posts interface {
 		Create(context.Context, *Post) error
 		GetById(context.Context, int64) (*Post, error)
-		Delete(context.Context, int64) error 
+		Delete(context.Context, int64) error
 		Update(context.Context, *Post) error
 		GetUserFeed(context.Context, int64, *PaginatedQuery) ([]PostWithMetaData, error)
-
 	}
 	Users interface {
 		Create(context.Context, *User) error
@@ -41,12 +40,11 @@ type Storage struct {
 	}
 }
 
-
-func NewPostgresStorage(db *sql.DB) Storage{
+func NewPostgresStorage(db *sql.DB) Storage {
 	return Storage{
-		Posts: &PostStore{db: db} ,
-		Users: &UsersStore{db: db},
-		Comments: &CommentStore{db:db},
-		Followers: &FollowerStore{db:db},
+		Posts:     &PostStore{db: db},
+		Users:     &UsersStore{db: db},
+		Comments:  &CommentStore{db: db},
+		Followers: &FollowerStore{db: db},
 	}
 }

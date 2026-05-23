@@ -9,70 +9,100 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-
-//getting post from context 
-func getPostFromContext(r *http.Request) *store.Post{
+// getting post from context
+func getPostFromContext(r *http.Request) *store.Post {
 	post, _ := r.Context().Value(PostCtx).(*store.Post)
 	return post
 }
 
-
 type CreatePostPayload struct {
-	Content string `json:"content" validate:"required,max=500"`
-	Title string   `json:"title" validate:"required,max=1000"`
-	Tags []string `json:"tags"`
+	Title   string   `json:"title" validate:"required,max=1000"`
+	Content string   `json:"content" validate:"required,max=500"`
+	Tags    []string `json:"tags"`
 }
 
-//Create Post
-func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request){
+type createPostHandlerResponse = SuccessResponse[store.Post]
 
-	var userId int64 = 1 
+// CreatePost godoc
+//
+//	@Summary		Creates a post
+//	@Description	Creates a post
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		CreatePostPayload	true	"Post payload"
+//	@Success		201		{object}	createPostHandlerResponse
+//	@Failure		400		{object}	ErrorResponseWrapper
+//	@Failure		401		{object}	ErrorResponseWrapper
+//	@Failure		500		{object}	ErrorResponseWrapper
+//	@Security		ApiKeyAuth
+//	@Router			/posts [post]
+//
+// Create Post
+func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
+
+	var userId int64 = 1
 
 	var payload CreatePostPayload
 
-	err := readJson(w,r, &payload)
+	err := readJson(w, r, &payload)
 
 	if err != nil {
-		app.badRequestError(w,r,err)
-		return 
+		app.badRequestError(w, r, err)
+		return
 	}
 
 	//validating the payload sent by the user
 	if err := Validate.Struct(payload); err != nil {
-		app.badRequestError(w,r,err)
-		return 
+		app.badRequestError(w, r, err)
+		return
 	}
 
 	post := &store.Post{
 		Content: payload.Content,
-		Title: payload.Title,
-		Tags : payload.Tags,
+		Title:   payload.Title,
+		Tags:    payload.Tags,
 		//TODO : we will get user id using JWT later on
-		UserId : userId,
+		UserId: userId,
 	}
-	
+
 	ctx := r.Context()
 	if err := app.store.Posts.Create(ctx, post); err != nil {
-		app.internalServerError(w,r,err)
-		return 
+		app.internalServerError(w, r, err)
+		return
 	}
 
 	data := map[string]any{
-		"status":"true",
-		"message":post,
-		"env":app.config.env,
+		"status":  "true",
+		"message": post,
+		"env":     app.config.env,
 	}
 
 	if err := writeJson(w, http.StatusOK, data); err != nil {
-		app.internalServerError(w,r,err)
+		app.internalServerError(w, r, err)
 		return
 	}
 
 }
 
+type getPostByIdHandlerResponse = SuccessResponse[store.Post]
 
-//GetPost by Id 
-func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Request){
+// GetPost godoc
+//
+//	@Summary		Fetches a post
+//	@Description	Fetches a post by ID of a user
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int	true	"Post ID"
+//	@Success		200		{object}	store.Post
+//	@Failure		404		{object}	ErrorResponseWrapper
+//	@Failure		500		{object}	ErrorResponseWrapper
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID} [get]
+//
+// GetPost by Id
+func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	// idParam := chi.URLParam(r, "postID")
 	// postId, err := strconv.ParseInt(idParam, 10, 64)
@@ -92,17 +122,16 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 	// 		//if not found in database we send 404 error
 	// 	case errors.Is(err, store.ErrNotFound):
 	// 		app.notFoundError(w,r, err)
-	// 	//else return internal server error 
-	// 	default: 
+	// 	//else return internal server error
+	// 	default:
 	// 		writeJson(w, http.StatusInternalServerError, err.Error())
 	// 	}
-	// return 
+	// return
 	// }
-	
-	post := getPostFromContext(r)
-	
 
-	//fetch comments for the post 
+	post := getPostFromContext(r)
+
+	//fetch comments for the post
 	comments, err := app.store.Comments.GetCommentsFromPost(r.Context(), post.ID)
 
 	if err != nil {
@@ -112,65 +141,93 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 
 	post.Comments = comments
 
-	//send the data to the user 
+	//send the data to the user
 	if err := writeJson(w, http.StatusOK, map[string]any{
-		"status":"true",
-		"message":post,
-		"env":app.config.env,
+		"status":  "true",
+		"message": post,
+		"env":     app.config.env,
 	}); err != nil {
 		writeJson(w, http.StatusInternalServerError, err.Error())
-		return 
+		return
 	}
 
 }
 
-
-//Delete post 
-func (app *application) deletePostHandler(w http.ResponseWriter, r * http.Request){
-	idParam := chi.URLParam(r,"postID")
-	postID, err := strconv.ParseInt(idParam,10,64)
+// DeletePost godoc
+//
+//	@Summary		Deletes a post
+//	@Description	Delete a post by ID
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path	int	true	"Post ID"
+//	@Success		204		"No Content"
+//	@Failure		404		{object}	ErrorResponseWrapper
+//	@Failure		500		{object}	ErrorResponseWrapper
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID} [delete]
+//
+// Delete post
+func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "postID")
+	postID, err := strconv.ParseInt(idParam, 10, 64)
 
 	if err != nil {
 		app.badRequestError(w, r, err)
 	}
 
 	ctx := r.Context()
-	if err := app.store.Posts.Delete(ctx,postID); err != nil {
-		switch{
+	if err := app.store.Posts.Delete(ctx, postID); err != nil {
+		switch {
 		case errors.Is(err, store.ErrNotFound):
-			app.notFoundError(w,r,err)
+			app.notFoundError(w, r, err)
 
 		default:
-			app.internalServerError(w,r,err)
+			app.internalServerError(w, r, err)
 		}
-		return 
+		return
 	}
-	//post deleted successfully 
-	writeJson(w,http.StatusNoContent, nil);
+	//post deleted successfully
+	writeJson(w, http.StatusNoContent, nil)
 }
 
-
-
 type UpdatePostPayload struct {
-	Title *string `json:"title" validate:"omitempty,max=200"` //using *string, so that if user doesn't send data it becomes nil
+	Title   *string `json:"title" validate:"omitempty,max=200"` //using *string, so that if user doesn't send data it becomes nil
 	Content *string `json:"content" validate:"omitempty,max=500"`
 }
 
-//update post 
-func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request){
-	//getting existing post first 
+// UpdatePost godoc
+//
+//	@Summary		Updates a post
+//	@Description	Updates a post by ID
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int					true	"Post ID"
+//	@Param			payload	body		UpdatePostPayload	true	"Post payload"
+//	@Success		200		{object}	store.Post
+//	@Failure		400		{object}	ErrorResponseWrapper
+//	@Failure		401		{object}	ErrorResponseWrapper
+//	@Failure		404		{object}	ErrorResponseWrapper
+//	@Failure		500		{object}	ErrorResponseWrapper
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID} [patch]
+//
+// update post
+func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
+	//getting existing post first
 	existingPost := getPostFromContext(r)
 
 	var payload UpdatePostPayload
 
-	err :=  readJson(w,r, &payload)
+	err := readJson(w, r, &payload)
 	if err != nil {
-		app.badRequestError(w,r,err)
-		return 
+		app.badRequestError(w, r, err)
+		return
 	}
 	//validating the payload sent by the user
 	if err := Validate.Struct(payload); err != nil {
-		app.badRequestError(w,r,err)
+		app.badRequestError(w, r, err)
 		return
 	}
 
@@ -183,25 +240,23 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 	}
 	ctx := r.Context()
 
-	//now passing payload to the store 
-	if err := app.store.Posts.Update(ctx,existingPost); err != nil {
-		switch{
+	//now passing payload to the store
+	if err := app.store.Posts.Update(ctx, existingPost); err != nil {
+		switch {
 		case errors.Is(err, store.ErrConflict):
-			app.conflictError(w,r,err) //409 someone else updated first
+			app.conflictError(w, r, err) //409 someone else updated first
 		default:
-			app.internalServerError(w,r,err)
+			app.internalServerError(w, r, err)
 		}
-		return 
+		return
 	}
 
 	data := map[string]any{
-		"status":"true",
-		"message":existingPost,
-		"env":app.config.env,
+		"status":  "true",
+		"message": existingPost,
+		"env":     app.config.env,
 	}
-	if err := writeJson(w,http.StatusCreated, data); err != nil {
-		app.internalServerError(w,r,err)
+	if err := writeJson(w, http.StatusCreated, data); err != nil {
+		app.internalServerError(w, r, err)
 	}
 }
-
-

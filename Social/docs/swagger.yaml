@@ -1,0 +1,612 @@
+basePath: /v1
+definitions:
+  main.CreateCommentPayload:
+    properties:
+      content:
+        maxLength: 500
+        type: string
+      post_id:
+        type: integer
+    required:
+    - content
+    - post_id
+    type: object
+  main.CreatePostPayload:
+    properties:
+      content:
+        maxLength: 500
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        maxLength: 1000
+        type: string
+    required:
+    - content
+    - title
+    type: object
+  main.ErrorResponseWrapper:
+    properties:
+      env:
+        example: development
+        type: string
+      message:
+        type: string
+      status:
+        example: false
+        type: boolean
+    type: object
+  main.UpdatePostPayload:
+    properties:
+      content:
+        maxLength: 500
+        type: string
+      title:
+        description: using *string, so that if user doesn't send data it becomes nil
+        maxLength: 200
+        type: string
+    type: object
+  main.createPostHandlerResponse:
+    properties:
+      env:
+        example: development
+        type: string
+      message:
+        $ref: '#/definitions/store.Post'
+      status:
+        example: true
+        type: boolean
+    type: object
+  main.getFollowersHandlerResponse:
+    properties:
+      env:
+        example: development
+        type: string
+      message:
+        items:
+          $ref: '#/definitions/store.Cuser'
+        type: array
+      status:
+        example: true
+        type: boolean
+    type: object
+  main.getUserByIdHandlerResponse:
+    properties:
+      env:
+        example: development
+        type: string
+      message:
+        $ref: '#/definitions/store.User'
+      status:
+        example: true
+        type: boolean
+    type: object
+  main.getUserFeedHandlerResponse:
+    properties:
+      env:
+        example: development
+        type: string
+      message:
+        items:
+          $ref: '#/definitions/store.PostWithMetaData'
+        type: array
+      status:
+        example: true
+        type: boolean
+    type: object
+  store.Comment:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      post_id:
+        type: integer
+      user:
+        $ref: '#/definitions/store.Cuser'
+      user_id:
+        type: integer
+    type: object
+  store.Cuser:
+    properties:
+      id:
+        type: integer
+      username:
+        type: string
+    type: object
+  store.Post:
+    properties:
+      comments:
+        items:
+          $ref: '#/definitions/store.Comment'
+        type: array
+      content:
+        type: string
+      created_at:
+        description: postgres generates this — you need it back
+        type: string
+      id:
+        description: postgres generates this — you need it back
+        type: integer
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      updated_at:
+        description: postgres generates this — you need it back
+        type: string
+      user:
+        $ref: '#/definitions/store.Cuser'
+      user_id:
+        type: integer
+      version:
+        type: integer
+    type: object
+  store.PostWithMetaData:
+    properties:
+      comment_count:
+        type: integer
+      comments:
+        items:
+          $ref: '#/definitions/store.Comment'
+        type: array
+      content:
+        type: string
+      created_at:
+        description: postgres generates this — you need it back
+        type: string
+      id:
+        description: postgres generates this — you need it back
+        type: integer
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      updated_at:
+        description: postgres generates this — you need it back
+        type: string
+      user:
+        $ref: '#/definitions/store.Cuser'
+      user_id:
+        type: integer
+      version:
+        type: integer
+    type: object
+  store.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      username:
+        type: string
+    type: object
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: "You can use endpoints and make your own frontend \U0001F618"
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: GopherSocial API (Social Media)
+paths:
+  /comments:
+    post:
+      consumes:
+      - application/json
+      description: Create  a comment on users post
+      parameters:
+      - description: Comment payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.CreateCommentPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.createPostHandlerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+      security:
+      - ApiKeyAuth: []
+      summary: Creates a Comment
+      tags:
+      - comments
+  /posts:
+    post:
+      consumes:
+      - application/json
+      description: Creates a post
+      parameters:
+      - description: Post payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.CreatePostPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/main.createPostHandlerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+      security:
+      - ApiKeyAuth: []
+      summary: Creates a post
+      tags:
+      - posts
+  /posts/{postID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a post by ID
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+      security:
+      - ApiKeyAuth: []
+      summary: Deletes a post
+      tags:
+      - posts
+    get:
+      consumes:
+      - application/json
+      description: Fetches a post by ID of a user
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.Post'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+      security:
+      - ApiKeyAuth: []
+      summary: Fetches a post
+      tags:
+      - posts
+    patch:
+      consumes:
+      - application/json
+      description: Updates a post by ID
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: integer
+      - description: Post payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.UpdatePostPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.Post'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+      security:
+      - ApiKeyAuth: []
+      summary: Updates a post
+      tags:
+      - posts
+  /users/{userID}:
+    get:
+      consumes:
+      - application/json
+      description: Fetches a user profile by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.getUserByIdHandlerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+      security:
+      - ApiKeyAuth: []
+      summary: Fetches a user profile
+      tags:
+      - users
+  /users/{userID}/follow:
+    post:
+      consumes:
+      - application/json
+      description: You’re free to follow any user.
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+      security:
+      - ApiKeyAuth: []
+      summary: Follow a user profile
+      tags:
+      - users
+  /users/{userID}/getfollowers:
+    get:
+      consumes:
+      - application/json
+      description: You can see all the followers of the user
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/main.getFollowersHandlerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+      security:
+      - ApiKeyAuth: []
+      summary: GetFollowers
+      tags:
+      - users
+  /users/{userID}/getfollowing:
+    get:
+      consumes:
+      - application/json
+      description: You can see all followers of any user, including yourself.
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/main.getFollowersHandlerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+      security:
+      - ApiKeyAuth: []
+      summary: GetFollowing
+      tags:
+      - users
+  /users/{userID}/unfollow:
+    post:
+      consumes:
+      - application/json
+      description: You’re free to unfollow any user.
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+      security:
+      - ApiKeyAuth: []
+      summary: UnFollow a user profile
+      tags:
+      - users
+  /users/feed:
+    get:
+      consumes:
+      - application/json
+      description: Fetches the user feed using algorithm
+      parameters:
+      - description: Since
+        in: query
+        name: since
+        type: string
+      - description: Until
+        in: query
+        name: until
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Sort
+        in: query
+        name: sort
+        type: string
+      - description: Tags
+        in: query
+        name: tags
+        type: string
+      - description: Search
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.getUserFeedHandlerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.ErrorResponseWrapper'
+      security:
+      - ApiKeyAuth: []
+      summary: Fetches the user feed
+      tags:
+      - feed
+securityDefinitions:
+  ApiKeyAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

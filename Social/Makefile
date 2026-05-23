@@ -21,3 +21,8 @@ seed:
 .PHONY: migrate-force
 migrate-force:
 	@migrate -path ${MIGRATIONS_PATH} -database ${DB_ADDR} force $(version)
+
+
+.PHONY: gen-docs
+gen-docs:
+	@swag init -g api/main.go -d cmd,internal && swag fmt

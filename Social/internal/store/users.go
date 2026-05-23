@@ -6,12 +6,11 @@ import (
 	"errors"
 )
 
-
 type User struct {
-	ID int64 `json:"id"`
-	Username string `json:"username"`
-	Email string `json:"email"`
-	Password string `json:"-"` //we will not return password to the user
+	ID        int64  `json:"id"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	Password  string `json:"-"` //we will not return password to the user
 	CreatedAt string `json:"created_at"`
 }
 
@@ -23,7 +22,7 @@ func (s *UsersStore) Create(ctx context.Context, user *User) error {
 	query := `INSERT INTO users (username, email, password)
 	VALUES($1, $2, $3) RETURNING id, created_at
 	`
-	//creating a time out 
+	//creating a time out
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
@@ -38,22 +37,22 @@ func (s *UsersStore) Create(ctx context.Context, user *User) error {
 		&user.CreatedAt,
 	)
 
-	if err !=nil {
+	if err != nil {
 		return err
 	}
 
-	return  nil
+	return nil
 }
 
-//Get user by id 
-func (s *UsersStore) GetById(ctx context.Context, userID int64) (*User, error){
+// Get user by id
+func (s *UsersStore) GetById(ctx context.Context, userID int64) (*User, error) {
 	query := `SELECT id, username, email, created_at FROM users WHERE id = $1`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 
 	defer cancel()
 
-	var user User 
+	var user User
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
@@ -67,11 +66,11 @@ func (s *UsersStore) GetById(ctx context.Context, userID int64) (*User, error){
 
 	if err != nil {
 		switch {
-		case errors.Is(err,sql.ErrNoRows):
+		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrNotFound
 		default:
 			return nil, err
 		}
 	}
-	return &user, nil 
+	return &user, nil
 }

@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Request){
+func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 
 	//Most basic way of sending json response without using any library
 
@@ -13,14 +13,14 @@ func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Reques
 	// "status":"true",
 	// "message":"Server is working properly"
 	// }`))
-	data:= map[string]string{
-		"status":"true",
-		"message":"Server is working properly", 
-		"env": app.config.env,
+	data := map[string]string{
+		"status":  "true",
+		"message": "Server is working properly",
+		"env":     app.config.env,
 	}
 
-	err:=  writeJson(w, http.StatusOK, data);
+	err := writeJson(w, http.StatusOK, data)
 	if err != nil {
-		app.internalServerError(w,r,err)
+		app.internalServerError(w, r, err)
 	}
 }
