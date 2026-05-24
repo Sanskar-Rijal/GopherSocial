@@ -1,10 +1,11 @@
 package main
 
 import (
-	"log"
 	"social/internal/db"
 	"social/internal/env"
 	"social/internal/store"
+
+	"go.uber.org/zap"
 )
 
 type ErrorResponseWrapper struct {
@@ -53,6 +54,11 @@ func main() {
 		env: env.GetString("Go_ENV", "dev"),
 	}
 
+	//Logger
+	logger := zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
+
+	//Database
 	// app := &application{
 	// 	config: config{
 	// 		addr: env.GetString("ADDR",":8080"),
@@ -65,22 +71,26 @@ func main() {
 	// 	},
 	// 	store: store,
 	// }
-	db, err := db.New(cfg.db.addr, cfg.db.maxOpenConns, cfg.db.maxIdleConns, cfg.db.maxIdleTime)
+	db, err := db.New(cfg.db.addr,
+		 cfg.db.maxOpenConns, 
+		 cfg.db.maxIdleConns,
+		  cfg.db.maxIdleTime)
 
 	if err != nil {
-		log.Panic(err)
+		logger.Fatal(err)
 	}
 
 	defer db.Close()
-	log.Println("Database Connection established")
+	logger.Info("Database Connection is live")
 
 	store := store.NewPostgresStorage(db)
 
 	app := &application{
 		config: cfg,
 		store:  store,
+		logger: logger,
 	}
 
 	mux := app.mount()
-	log.Fatal(app.run(mux))
+	logger.Fatal(app.run(mux))
 }
