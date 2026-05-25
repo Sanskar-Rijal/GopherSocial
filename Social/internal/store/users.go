@@ -4,21 +4,57 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
+)
+
+
+var (
+	ErrDuplicateEmail    = errors.New("A user with that email already exists")
+	ErrDuplicateUsername = errors.New("A user with that username already exists")
 )
 
 type User struct {
 	ID        int64  `json:"id"`
 	Username  string `json:"username"`
 	Email     string `json:"email"`
-	Password  string `json:"-"` //we will not return password to the user
+	Password  password `json:"-"` //we will not return password to the user
 	CreatedAt string `json:"created_at"`
+}
+
+
+type password struct {
+	text *string //plain text that user types 
+	hash []byte //hashes and is stored in database
+}
+
+//function that receives password and generates hash
+func (p  *password) Set(text string ) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(text), 13)
+
+	if err != nil {
+		return err
+	}
+	p.text = &text
+	p.hash = hash
+
+	return nil 
+
+}
+
+//function to comapare user password 
+func (p *password) ComparePassword(text string) error {
+	return bcrypt.CompareHashAndPassword(p.hash,[]byte(text))
+	// returns nil if match
+    // returns error if no match
 }
 
 type UsersStore struct {
 	db *sql.DB
 }
 
-func (s *UsersStore) Create(ctx context.Context, user *User) error {
+func (s *UsersStore) Create(ctx context.Context,tx *sql.Tx, user *User) error {
 	query := `INSERT INTO users (username, email, password)
 	VALUES($1, $2, $3) RETURNING id, created_at
 	`
@@ -26,7 +62,7 @@ func (s *UsersStore) Create(ctx context.Context, user *User) error {
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	err := s.db.QueryRowContext(
+	err := tx.QueryRowContext(
 		ctx,
 		query,
 		user.Username,
@@ -36,9 +72,16 @@ func (s *UsersStore) Create(ctx context.Context, user *User) error {
 		&user.ID,
 		&user.CreatedAt,
 	)
-
+	
 	if err != nil {
-		return err
+		switch {
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
+			return ErrDuplicateEmail
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_username_key"`:
+			return ErrDuplicateUsername
+		default:
+			return err
+		}
 	}
 
 	return nil
@@ -73,4 +116,53 @@ func (s *UsersStore) GetById(ctx context.Context, userID int64) (*User, error) {
 		}
 	}
 	return &user, nil
+}
+
+
+func(s *UsersStore)	CreateAndInvite(ctx context.Context, user *User, token string, expiry time.Duration) error{
+
+	// withTx wraps everything in a transaction
+	return withTx(s.db,ctx, func(tx *sql.Tx) error {
+
+	//transaction wrapper
+	//-> Create the user 
+	//-> Create user user invite (if it fails, we roll back)
+
+	//Step-1 - Create user in users table 
+	if err := s.Create(ctx,tx, user); err != nil {
+		//if error roll back 
+		return err
+	}
+
+	//Step-2 create invitation in user_invitations table
+	if err := s.createUserInvitation(ctx, tx, token , user.ID, expiry); err != nil {
+		return err
+	}
+
+	return nil 
+
+	})
+}
+
+
+func (s *UsersStore) createUserInvitation (ctx context.Context, tx *sql.Tx, token string, userID int64, expiry time.Duration) error{
+
+	query := `insert into user_invitations (token,user_id,expiry) values ($1,$2,$3)`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+	
+	_, err := tx.ExecContext(
+		ctx,
+		query,
+		token, 
+		userID,
+		time.Now().Add(expiry),
+	)
+
+	if err != nil {
+		return err
+	}
+ 
+	return nil
 }

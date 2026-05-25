@@ -15,12 +15,12 @@ func Seed(store store.Storage) {
 	//creating a user
 	users := generateUser(100)
 
-	for _, value := range users {
-		if err := store.Users.Create(ctx, value); err != nil {
-			log.Println("Error creating users: ", err)
-			return
-		}
-	}
+	// for _, value := range users {
+	// 	if err := store.Users.Create(ctx, value); err != nil {
+	// 		log.Println("Error creating users: ", err)
+	// 		return
+	// 	}
+	// }
 
 	posts := generatePosts(200, users)
 	for _, value := range posts {
@@ -48,7 +48,6 @@ func generateUser(num int) []*store.User {
 		users[i] = &store.User{
 			Username: usernames[i%len(usernames)] + fmt.Sprintf("%d", i),
 			Email:    usernames[i%len(usernames)] + fmt.Sprintf("%d", i) + "@example.com",
-			Password: "asdfghjkl",
 		}
 	}
 	return users

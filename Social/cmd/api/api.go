@@ -24,6 +24,11 @@ type config struct {
 	db     dbConfig
 	env    string
 	apiURL string
+	mail   mailConfig 
+}
+
+type mailConfig struct{
+	exp time.Duration
 }
 
 type dbConfig struct {
@@ -62,6 +67,11 @@ func (app *application) mount() http.Handler {
 		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.addr)
 
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
+
+		//Public Routes 
+		r.Route("/authentication", func(r chi.Router){
+			r.Post("/user", app.registerUserHandler)
+		})
 
 		//comments
 		r.Route("/comments", func(r chi.Router) {
