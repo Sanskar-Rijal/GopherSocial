@@ -24,10 +24,10 @@ type config struct {
 	db     dbConfig
 	env    string
 	apiURL string
-	mail   mailConfig 
+	mail   mailConfig
 }
 
-type mailConfig struct{
+type mailConfig struct {
 	exp time.Duration
 }
 
@@ -68,8 +68,8 @@ func (app *application) mount() http.Handler {
 
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
 
-		//Public Routes 
-		r.Route("/authentication", func(r chi.Router){
+		//Public Routes
+		r.Route("/authentication", func(r chi.Router) {
 			r.Post("/user", app.registerUserHandler)
 		})
 
@@ -94,6 +94,8 @@ func (app *application) mount() http.Handler {
 		})
 		//users
 		r.Route("/users", func(r chi.Router) {
+			//Activate user
+			r.Post("/activate/{token}", app.activateUserHandler)
 
 			r.Route("/{userID}", func(r chi.Router) {
 
@@ -133,6 +135,6 @@ func (app *application) run(mux http.Handler) error {
 		ReadTimeout:  time.Second * 10,
 		IdleTimeout:  time.Minute,
 	}
-	app.logger.Infow("Server has started at port","addr",app.config.addr,"env", app.config.env)
+	app.logger.Infow("Server has started at port", "addr", app.config.addr, "env", app.config.env)
 	return server.ListenAndServe()
 }

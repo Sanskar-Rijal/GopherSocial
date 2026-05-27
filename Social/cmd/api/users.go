@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"social/internal/store"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func getUserFromContext(r *http.Request) *store.User {
@@ -230,4 +232,45 @@ func (app *application) getFollowingHandler(w http.ResponseWriter, r *http.Reque
 		app.internalServerError(w, r, err)
 		return
 	}
+}
+
+// ActivateUser godoc
+//
+//	@Summary		Activates/Register a user
+//	@Description	Activates/Register a user by invitation token
+//	@Tags			users
+//	@Produce		json
+//	@Param			token	path		string	true	"Invitation token"
+//	@Success		204		{string}	string	"User activated"
+//	@Failure		404		{object}	ErrorResponseWrapper
+//	@Failure		500		{object}	ErrorResponseWrapper
+//	@Security		ApiKeyAuth
+//	@Router			/users/activate/{token} [post]
+func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+	//getting token from the url
+	token := chi.URLParam(r, "token")
+
+	ctx := r.Context()
+
+	if err := app.store.Users.ActivateUser(ctx, token); err != nil {
+		switch {
+		case errors.Is(err, store.ErrNotFound):
+			app.badRequestError(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	data := map[string]any{
+		"env":     app.config.env,
+		"message": "User Activated Successfully",
+		"status":  "true",
+	}
+
+	if err := writeJson(w, http.StatusNoContent, data); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
 }

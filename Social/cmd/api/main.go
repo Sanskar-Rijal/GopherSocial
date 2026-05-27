@@ -54,7 +54,7 @@ func main() {
 		},
 		env: env.GetString("Go_ENV", "dev"),
 		mail: mailConfig{
-			exp: time.Hour * 24 * 3 , // 3 days from now 
+			exp: time.Hour * 24 * 3, // 3 days from now
 		},
 	}
 
@@ -76,9 +76,9 @@ func main() {
 	// 	store: store,
 	// }
 	db, err := db.New(cfg.db.addr,
-		 cfg.db.maxOpenConns, 
-		 cfg.db.maxIdleConns,
-		  cfg.db.maxIdleTime)
+		cfg.db.maxOpenConns,
+		cfg.db.maxIdleConns,
+		cfg.db.maxIdleTime)
 
 	if err != nil {
 		logger.Fatal(err)

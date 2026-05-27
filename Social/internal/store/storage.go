@@ -22,9 +22,10 @@ type Storage struct {
 		GetUserFeed(context.Context, int64, *PaginatedQuery) ([]PostWithMetaData, error)
 	}
 	Users interface {
-		Create(context.Context,*sql.Tx, *User) error
+		Create(context.Context, *sql.Tx, *User) error
 		GetById(context.Context, int64) (*User, error)
 		CreateAndInvite(context.Context, *User, string, time.Duration) error
+		ActivateUser(context.Context, string) error
 	}
 
 	Comments interface {
@@ -50,13 +51,12 @@ func NewPostgresStorage(db *sql.DB) Storage {
 	}
 }
 
-
-func withTx(db *sql.DB, ctx context.Context, fn func(*sql.Tx) error ) error {
-	//starting a transaction 
-	tx, err := db.BeginTx(ctx, nil )
+func withTx(db *sql.DB, ctx context.Context, fn func(*sql.Tx) error) error {
+	//starting a transaction
+	tx, err := db.BeginTx(ctx, nil)
 
 	if err != nil {
-		return  err 
+		return err
 	}
 
 	if err := fn(tx); err != nil {
@@ -66,5 +66,5 @@ func withTx(db *sql.DB, ctx context.Context, fn func(*sql.Tx) error ) error {
 	}
 
 	//SAVE everything if all succeeded, make it permanent
-	return tx.Commit() 
+	return tx.Commit()
 }
