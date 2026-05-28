@@ -30,10 +30,10 @@ type config struct {
 }
 
 type mailConfig struct {
-	fromEmail string 
-	password string 
-	isDevelopment bool 
-	exp time.Duration
+	fromEmail     string
+	password      string
+	isDevelopment bool
+	exp           time.Duration
 }
 
 type dbConfig struct {

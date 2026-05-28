@@ -276,13 +276,12 @@ func (s *UsersStore) DeleteUserInvitations(ctx context.Context, tx *sql.Tx, user
 
 }
 
-
 func (s *UsersStore) Delete(ctx context.Context, userID int64) error {
 	query := `delete from users where id =$1`
-	ctx, cancel := context.WithTimeout(ctx,QueryTimeoutDuration)
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	res , err := s.db.ExecContext(
+	res, err := s.db.ExecContext(
 		ctx,
 		query,
 		userID,
@@ -292,14 +291,14 @@ func (s *UsersStore) Delete(ctx context.Context, userID int64) error {
 		return err
 	}
 
-	rows, err :=  res.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
-		return err 
+		return err
 	}
 
 	if rows == 0 {
 		return ErrNotFound
 	}
 
-	return nil 
+	return nil
 }

@@ -55,10 +55,10 @@ func main() {
 		},
 		env: env.GetString("Go_ENV", "dev"),
 		mail: mailConfig{
-			fromEmail: env.GetString("GMAIL_USER","alchiiii@gmail.com"),
-			password: env.GetString("GMAIL_PASSWORD","isshhhh vanxu"),
-			isDevelopment: env.GetBool("MAIL_ENV",true),
-			exp: time.Hour * 24 * 3, // 3 days from now
+			fromEmail:     env.GetString("GMAIL_USER", "alchiiii@gmail.com"),
+			password:      env.GetString("GMAIL_PASSWORD", "isshhhh vanxu"),
+			isDevelopment: env.GetBool("MAIL_ENV", true),
+			exp:           time.Hour * 24 * 3, // 3 days from now
 		},
 	}
 
@@ -93,7 +93,7 @@ func main() {
 
 	store := store.NewPostgresStorage(db)
 
-	mailer := mailer.NewGmailMailer(cfg.mail.fromEmail,cfg.mail.password)
+	mailer := mailer.NewGmailMailer(cfg.mail.fromEmail, cfg.mail.password)
 
 	app := &application{
 		config: cfg,

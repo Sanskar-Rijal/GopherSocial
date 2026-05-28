@@ -240,8 +240,8 @@ func (app *application) getFollowingHandler(w http.ResponseWriter, r *http.Reque
 //	@Description	Activates/Register a user by invitation token
 //	@Tags			users
 //	@Produce		json
-//	@Param			token	path		string	true	"Invitation token"
-//	@Success		204		{string}	string	"User activated"
+//	@Param			token	path	string	true	"Invitation token"
+//	@Success		204		"No Content"
 //	@Failure		404		{object}	ErrorResponseWrapper
 //	@Failure		500		{object}	ErrorResponseWrapper
 //	@Security		ApiKeyAuth

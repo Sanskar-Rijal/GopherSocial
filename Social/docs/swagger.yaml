@@ -65,6 +65,13 @@ definitions:
         maxLength: 200
         type: string
     type: object
+  main.UserWithToken:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/store.User'
+    type: object
   main.createPostHandlerResponse:
     properties:
       env:
@@ -119,7 +126,7 @@ definitions:
         example: development
         type: string
       message:
-        $ref: '#/definitions/store.User'
+        $ref: '#/definitions/main.UserWithToken'
       status:
         example: true
         type: boolean
@@ -622,9 +629,7 @@ paths:
       - application/json
       responses:
         "204":
-          description: User activated
-          schema:
-            type: string
+          description: No Content
         "404":
           description: Not Found
           schema:

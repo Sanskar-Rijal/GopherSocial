@@ -371,10 +371,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "User activated",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "No Content"
                     },
                     "404": {
                         "description": "Not Found",
@@ -838,6 +835,17 @@ const docTemplate = `{
                 }
             }
         },
+        "main.UserWithToken": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/store.User"
+                }
+            }
+        },
         "main.createPostHandlerResponse": {
             "type": "object",
             "properties": {
@@ -916,7 +924,7 @@ const docTemplate = `{
                     "example": "development"
                 },
                 "message": {
-                    "$ref": "#/definitions/store.User"
+                    "$ref": "#/definitions/main.UserWithToken"
                 },
                 "status": {
                     "type": "boolean",

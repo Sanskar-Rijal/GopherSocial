@@ -18,11 +18,11 @@ type RegisterUserPayload struct {
 }
 
 type UserWithToken struct {
-	User *store.User
-	Token string `json:"token"`
+	User  *store.User `json:"user"`
+	Token string      `json:"token"`
 }
 
-type registerUserHandlerResponse = SuccessResponse[store.User]
+type registerUserHandlerResponse = SuccessResponse[UserWithToken]
 
 // registerUserHandler godoc
 //
@@ -79,48 +79,46 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		}
 		return
 	}
-	//Send mail portion 
+	//Send mail portion
 
 	userWithToken := &UserWithToken{
-		User: user,
+		User:  user,
 		Token: plainToken,
 	}
 
 	data := struct {
-		Username string 
-		ActivationURL string 
+		Username      string
+		ActivationURL string
 	}{
-		Username: user.Username,
-		ActivationURL: fmt.Sprintf("www.gophersocial.com/confirm/%s",plainToken),
+		Username:      user.Username,
+		ActivationURL: fmt.Sprintf("www.gophersocial.com/confirm/%s", plainToken),
 	}
 
+	status, err := app.mailer.Send(
+		mailer.UserWelcomeTemplate,
+		user.Username,
+		user.Email,
+		data,
+		app.config.mail.isDevelopment,
+	)
 
-		status, err := app.mailer.Send(
-			mailer.UserWelcomeTemplate,
-			user.Username,
-			user.Email,
-			data,
-			app.config.mail.isDevelopment,
+	if err != nil {
+
+		app.logger.Errorw("failed to send welcome email",
+			"error", err,
+			"email", user.Email,
 		)
 
-		if err != nil {
-
-			  app.logger.Errorw("failed to send welcome email",
-                "error", err,
-                "email", user.Email,
-            )
-
-			//RollBack userCreation 
-			if err := app.store.Users.Delete(ctx, user.ID); err != nil {				
-				app.logger.Errorw("error deleting user", "error", err)
-			}
-			app.internalServerError(w,r,err)
-			return 
+		//RollBack userCreation
+		if err := app.store.Users.Delete(ctx, user.ID); err != nil {
+			app.logger.Errorw("error deleting user", "error", err)
 		}
-		
+		app.internalServerError(w, r, err)
+		return
+	}
+
 	// log success with status code
-    app.logger.Infow("Email sent", "status code", status)
-	
+	app.logger.Infow("Email sent", "status code", status)
 
 	response := map[string]any{
 		"env":     app.config.env,
