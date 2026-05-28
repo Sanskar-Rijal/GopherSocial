@@ -88,10 +88,10 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	data := struct {
 		Username string 
-		ActivationUrl string 
+		ActivationURL string 
 	}{
 		Username: user.Username,
-		ActivationUrl: fmt.Sprintf("www.gophersocial.com/confirm/%s",plainToken),
+		ActivationURL: fmt.Sprintf("www.gophersocial.com/confirm/%s",plainToken),
 	}
 
 

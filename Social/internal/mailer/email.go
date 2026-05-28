@@ -21,7 +21,7 @@ func NewGmailMailer(fromEmail string, password string) *GmailMailer {
 		fromEmail: fromEmail,
 		fromName: FromName,
 		password: password,
-		host: "smpt@gmail.com",
+		host: "smtp.gmail.com",
 		port: "587",
 	}
 }
@@ -32,7 +32,7 @@ func (m *GmailMailer) Send(templateFile string, username string, email string, d
 
 	tmpl, err := template.ParseFS(FS,"template/"+templateFile)
 	if err != nil {
-		return -1, nil 
+		return -1, err 
 	}
 
 	//build subject from template
@@ -55,7 +55,7 @@ func (m *GmailMailer) Send(templateFile string, username string, email string, d
 	)
 
 	//in development don't send email, just log it 
-	if isDevelopment{
+	if isDevelopment {
 		fmt.Printf("SANDBOX EMAIL\nTo: %s\nSubject: %s\nBody: %s\n",
             email, subject.String(), body.String())
 		return 200, nil 
@@ -72,7 +72,7 @@ func (m *GmailMailer) Send(templateFile string, username string, email string, d
 	var retryError error 
 	for i := 0 ; i < maxRetries; i++{
 
-		retryError := smtp.SendMail(
+		retryError = smtp.SendMail(
 			m.host+":"+m.port,
 			auth,
 			m.fromEmail,
