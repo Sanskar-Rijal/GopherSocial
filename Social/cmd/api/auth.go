@@ -104,7 +104,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		)
 
 		if err != nil {
-			
+
 			  app.logger.Errorw("failed to send welcome email",
                 "error", err,
                 "email", user.Email,
@@ -132,5 +132,4 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		app.internalServerError(w, r, err)
 		return
 	}
-
 }

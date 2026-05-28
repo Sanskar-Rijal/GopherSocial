@@ -14,6 +14,7 @@ Social media backend built with Go. Features REST APIs for users, posts, comment
 
 ## Features
 
+- Email - Email is sent for account activation
 - Posts — create, read, update, delete
 - Comments — add and fetch comments on posts
 - Users — fetch user profiles
