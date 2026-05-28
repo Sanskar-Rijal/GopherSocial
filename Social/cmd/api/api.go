@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"social/docs"
+	"social/internal/mailer"
 	"social/internal/store"
 	"time"
 
@@ -17,6 +18,7 @@ type application struct {
 	config config
 	store  store.Storage
 	logger *zap.SugaredLogger
+	mailer mailer.Client
 }
 
 type config struct {
@@ -28,6 +30,9 @@ type config struct {
 }
 
 type mailConfig struct {
+	fromEmail string 
+	password string 
+	isDevelopment bool 
 	exp time.Duration
 }
 

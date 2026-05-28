@@ -3,7 +3,9 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
+	"social/internal/mailer"
 	"social/internal/store"
 
 	"github.com/google/uuid"
@@ -13,6 +15,11 @@ type RegisterUserPayload struct {
 	Username string `json:"username" validate:"required,max=100"`
 	Email    string `json:"email" validate:"required,email,max=255"`
 	Password string `json:"password" validate:"required,min=8,max=255"`
+}
+
+type UserWithToken struct {
+	User *store.User
+	Token string `json:"token"`
 }
 
 type registerUserHandlerResponse = SuccessResponse[store.User]
@@ -72,15 +79,56 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		}
 		return
 	}
+	//Send mail portion 
 
-	//we will send mail
-	data := map[string]any{
+	userWithToken := &UserWithToken{
+		User: user,
+		Token: plainToken,
+	}
+
+	data := struct {
+		Username string 
+		ActivationUrl string 
+	}{
+		Username: user.Username,
+		ActivationUrl: fmt.Sprintf("www.gophersocial.com/confirm/%s",plainToken),
+	}
+
+
+		status, err := app.mailer.Send(
+			mailer.UserWelcomeTemplate,
+			user.Username,
+			user.Email,
+			data,
+			app.config.mail.isDevelopment,
+		)
+
+		if err != nil {
+			
+			  app.logger.Errorw("failed to send welcome email",
+                "error", err,
+                "email", user.Email,
+            )
+
+			//RollBack userCreation 
+			if err := app.store.Users.Delete(ctx, user.ID); err != nil {				
+				app.logger.Errorw("error deleting user", "error", err)
+			}
+			app.internalServerError(w,r,err)
+			return 
+		}
+		
+	// log success with status code
+    app.logger.Infow("Email sent", "status code", status)
+	
+
+	response := map[string]any{
 		"env":     app.config.env,
-		"message": user,
+		"message": userWithToken,
 		"status":  "true",
 	}
 
-	if err := writeJson(w, http.StatusCreated, data); err != nil {
+	if err := writeJson(w, http.StatusCreated, response); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
