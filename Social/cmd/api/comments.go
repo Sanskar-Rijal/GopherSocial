@@ -3,6 +3,9 @@ package main
 import (
 	"net/http"
 	"social/internal/store"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type CreateCommentPayload struct {
@@ -68,4 +71,44 @@ func (app *application) addCommentHandler(w http.ResponseWriter, r *http.Request
 		app.internalServerError(w, r, err)
 		return
 	}
+}
+
+// DeleteComment godoc
+//
+//	@Summary		Deletes comment from post
+//	@Description	Delete a comment by ID
+//	@Tags			comments
+//	@Accept			json
+//	@Produce		json
+//	@Param			commentID	path	int	true	"comment ID"
+//	@Success		204			"No Content"
+//	@Failure		404			{object}	ErrorResponseWrapper
+//	@Failure		500			{object}	ErrorResponseWrapper
+//	@Security		ApiKeyAuth
+//	@Router			/comments/{commentID} [delete]
+//
+// Delete post
+func (app *application) deleteCommentHandler(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "commentID")
+	commentID, err := strconv.ParseInt(idParam, 10, 64)
+
+	if err != nil {
+		app.badRequestError(w, r, err)
+		return 
+	}
+
+	ctx := r.Context()
+
+	if err := app.store.Comments.Delete(ctx, commentID); err != nil {
+		switch err {
+		case store.ErrNotFound:
+			app.notFoundError(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	//comment deleted successfully
+	writeJson(w, http.StatusNoContent, nil)
 }

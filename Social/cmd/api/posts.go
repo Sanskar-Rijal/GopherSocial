@@ -174,6 +174,7 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 
 	if err != nil {
 		app.badRequestError(w, r, err)
+		return 
 	}
 
 	ctx := r.Context()
