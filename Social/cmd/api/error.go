@@ -70,3 +70,17 @@ func (app *application) conflictError(w http.ResponseWriter, r *http.Request, er
 		"env":     app.config.env,
 	})
 }
+
+
+func (app *application) unAuthorizedBasicError(w http.ResponseWriter, r *http.Request, err error) {
+
+	app.logger.Warnf("unAuthorizedBasicError basic authorization error", "method", r.Method, "path", r.URL.Path, "error", err)
+
+	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+
+	writeJson(w, http.StatusUnauthorized, map[string]string{
+		"status":  "false",
+		"message": err.Error(),
+		"env":     app.config.env,
+	})
+}

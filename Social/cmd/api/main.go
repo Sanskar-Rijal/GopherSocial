@@ -60,6 +60,12 @@ func main() {
 			isDevelopment: env.GetBool("MAIL_ENV", true),
 			exp:           time.Hour * 24 * 3, // 3 days from now
 		},
+		auth: authConfig{
+			basic: basicConfig{
+				username: env.GetString("USERNAME","hehe"),
+				password: env.GetString("PASSWORD","hisans"),
+			},
+		},
 	}
 
 	//Logger

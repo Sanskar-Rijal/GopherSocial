@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 	"social/internal/store"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -82,4 +85,60 @@ func (app *application) userContextMiddleware(next http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, UserCtx, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+
+
+//Basic authentication middleware 
+func (app *application) BasicAuthMiddleware() func(http.Handler) http.Handler {
+	return func (next http.Handler) http.Handler {
+		return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request){
+
+			//step-1 read authorization header 
+			authHeader := r.Header.Get("Authorization")
+
+			if authHeader == ""{
+				//no header 
+				app.unAuthorizedBasicError(w,r, fmt.Errorf("Authorization header is missing"))
+				return 
+			}
+			//step-2 Split header into parts
+
+			// header looks like: "Basic YWRtaW46cGFzc3dvcmQxMjM="
+            // after split:       ["Basic", "YWRtaW46cGFzc3dvcmQxMjM="]
+			parts := strings.Split(authHeader," ")
+			if len(parts) != 2 || parts[0] != "Basic"{
+				//wrong format or auth type 
+				app.unAuthorizedBasicError(w,r,fmt.Errorf("authorization header is malformed"))
+				return 
+			}
+			//step-3  decode base64 
+
+			// "YWRtaW46cGFzc3dvcmQxMjM=" → "admin:password123"
+			decoded, err := base64.StdEncoding.DecodeString(parts[1])
+
+			if err != nil {
+				app.unAuthorizedBasicError(w,r,err)
+				return 
+			}
+
+			//step-4 check credentials 
+			//Getting expected credentials from config 
+			username := app.config.auth.basic.username
+			password := app.config.auth.basic.password
+
+			//splitting the decoded string  by : 
+			creds := strings.SplitN(string(decoded),":",2)
+
+			if len(creds) != 2 || creds[0] != username || creds[1] != password{
+				//wrong username or password 
+				app.unAuthorizedBasicError(w,r,fmt.Errorf("invalid credentials"))
+				return 
+			}
+
+			//step-5 everything ok, allow the request to go through 
+			next.ServeHTTP(w,r)
+
+		})
+	}
 }
