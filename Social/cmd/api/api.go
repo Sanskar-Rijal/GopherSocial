@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"social/docs"
+	"social/internal/auth"
 	"social/internal/mailer"
 	"social/internal/store"
 	"time"
@@ -19,6 +20,7 @@ type application struct {
 	store  store.Storage
 	logger *zap.SugaredLogger
 	mailer mailer.Client
+	authenticator auth.Authenticator
 }
 
 type config struct {
@@ -32,11 +34,19 @@ type config struct {
 
 type authConfig struct {
 	basic basicConfig 
+	token tokenConfig
 }
 
 type basicConfig struct {
 	username string 
 	password string
+}
+
+type tokenConfig struct {
+	secret string
+	exp time.Duration 
+	iss string 
+	aud string 
 }
 
 type mailConfig struct {
@@ -91,6 +101,9 @@ func (app *application) mount() http.Handler {
 		//Public Routes
 		r.Route("/authentication", func(r chi.Router) {
 			r.Post("/user", app.registerUserHandler)
+
+			//login user 
+			r.Post("/login",app.LoginUserHandler)
 		})
 
 		//comments
@@ -123,7 +136,6 @@ func (app *application) mount() http.Handler {
 			r.Post("/activate/{token}", app.activateUserHandler)
 
 			r.Route("/{userID}", func(r chi.Router) {
-
 				//using middleware to fetch user from url
 				r.Use(app.userContextMiddleware)
 

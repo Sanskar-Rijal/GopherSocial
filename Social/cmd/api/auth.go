@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"social/internal/mailer"
 	"social/internal/store"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
@@ -110,6 +112,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		)
 
 		//RollBack userCreation
+
 		if err := app.store.Users.Delete(ctx, user.ID); err != nil {
 			app.logger.Errorw("error deleting user", "error", err)
 		}
@@ -130,4 +133,93 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		app.internalServerError(w, r, err)
 		return
 	}
+}
+
+
+
+type LoginPayload struct {
+	Email string   `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
+
+
+
+
+// Loginuser godoc
+//
+//	@Summary		Login user into the app
+//	@Description	Creates a token for a user after login
+//	@Tags			authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		LoginPayload	true	"User credentials"
+//	@Success		200		{string}	string					"Token"
+//	@Failure		400		{object}	ErrorResponseWrapper
+//	@Failure		401		{object}	ErrorResponseWrapper
+//	@Failure		500		{object}	ErrorResponseWrapper
+//	@Router			/authentication/login [post]
+func(app *application) LoginUserHandler(w http.ResponseWriter, r *http.Request){
+	var payload LoginPayload
+	//putting the value from body to payload
+	if err := readJson(w,r, &payload); err != nil {
+		app.badRequestError(w,r,err)
+		return
+	}
+
+	//Validate struct
+	if err := Validate.Struct(payload); err != nil {
+		app.badRequestError(w,r,err)
+		return
+	}
+
+	ctx := r.Context()
+	//get user all details from email 
+	user, err := app.store.Users.GetByEmail(ctx,payload.Email)
+
+	if err != nil{
+		switch err {
+		case store.ErrNotFound:
+			app.badRequestError(w,r,err)
+			return 
+		default: 
+			app.internalServerError(w,r,err)
+			return
+		}
+	}
+
+	//compare user passwrod 
+	if err := user.Password.ComparePassword(payload.Password); err != nil {
+		app.unAuthorizedError(w,r,fmt.Errorf("Invalid credentials"))
+		return 
+	}
+
+	claims := jwt.MapClaims{
+		"sub": user.ID,
+		"exp": time.Now().Add(app.config.auth.token.exp).Unix(),
+		"iat": time.Now().Unix(),
+		"nbf":time.Now().Unix(),
+		"iss":app.config.auth.token.iss,
+		"aud":app.config.auth.token.aud,
+	}
+
+	token, err := app.authenticator.GenerateToken(claims)
+
+	if err!= nil {
+		app.internalServerError(w,r,err)
+		return 
+	}
+
+	data := map[string]any{
+		"status":"true",
+		"message":map[string]any{
+			"token":token,
+		},
+	}
+
+	if err := writeJson(w, http.StatusOK, data); err != nil {
+		app.internalServerError(w,r, err)
+		return 
+	}
+
 }

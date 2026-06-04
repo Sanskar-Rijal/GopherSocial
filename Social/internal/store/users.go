@@ -302,3 +302,37 @@ func (s *UsersStore) Delete(ctx context.Context, userID int64) error {
 
 	return nil
 }
+
+
+
+func (s *UsersStore) GetByEmail(ctx context.Context, email string ) (*User,error) {
+	query := `SELECT id, email, username, password, created_at From users where email=$1 AND is_active=true`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	user := &User{}
+
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		email,
+	).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Username,
+		&user.Password.hash,
+		&user.CreatedAt,
+	)
+
+	if err != nil {
+		switch err{
+		case sql.ErrNoRows:
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return user,err
+}

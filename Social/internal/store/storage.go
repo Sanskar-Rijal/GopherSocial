@@ -27,6 +27,7 @@ type Storage struct {
 		GetById(context.Context, int64) (*User, error)
 		CreateAndInvite(context.Context, *User, string, time.Duration) error
 		ActivateUser(context.Context, string) error
+		GetByEmail(context.Context, string) (*User, error)
 	}
 
 	Comments interface {

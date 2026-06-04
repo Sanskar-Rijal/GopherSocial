@@ -1,6 +1,7 @@
 package main
 
 import (
+	"social/internal/auth"
 	"social/internal/db"
 	"social/internal/env"
 	"social/internal/mailer"
@@ -65,6 +66,12 @@ func main() {
 				username: env.GetString("USERNAME","hehe"),
 				password: env.GetString("PASSWORD","hisans"),
 			},
+		token: tokenConfig{
+			secret: env.GetString("JWT_SECRET","enter-your-secret"),
+			exp: time.Hour * 24 * 3,
+			iss: env.GetString("ISSUED_BY","april"),
+			aud: env.GetString("AUDIENCE","april"),
+		},
 		},
 	}
 
@@ -101,11 +108,20 @@ func main() {
 
 	mailer := mailer.NewGmailMailer(cfg.mail.fromEmail, cfg.mail.password)
 
+	jwtAuthenticator := auth.NewJWTAuthenticator(
+		cfg.auth.token.secret,
+		cfg.auth.token.exp,
+		cfg.auth.token.iss,
+		cfg.auth.token.aud,
+	)
+	
+
 	app := &application{
 		config: cfg,
 		store:  store,
 		logger: logger,
 		mailer: mailer,
+		authenticator: jwtAuthenticator,
 	}
 
 	mux := app.mount()
