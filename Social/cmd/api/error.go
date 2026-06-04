@@ -71,7 +71,6 @@ func (app *application) conflictError(w http.ResponseWriter, r *http.Request, er
 	})
 }
 
-
 func (app *application) unAuthorizedBasicError(w http.ResponseWriter, r *http.Request, err error) {
 
 	app.logger.Warnf("unAuthorizedBasicError basic authorization error", "method", r.Method, "path", r.URL.Path, "error", err)

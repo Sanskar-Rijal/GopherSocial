@@ -94,7 +94,7 @@ func (app *application) deleteCommentHandler(w http.ResponseWriter, r *http.Requ
 
 	if err != nil {
 		app.badRequestError(w, r, err)
-		return 
+		return
 	}
 
 	ctx := r.Context()

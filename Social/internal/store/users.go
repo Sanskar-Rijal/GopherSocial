@@ -303,9 +303,7 @@ func (s *UsersStore) Delete(ctx context.Context, userID int64) error {
 	return nil
 }
 
-
-
-func (s *UsersStore) GetByEmail(ctx context.Context, email string ) (*User,error) {
+func (s *UsersStore) GetByEmail(ctx context.Context, email string) (*User, error) {
 	query := `SELECT id, email, username, password, created_at From users where email=$1 AND is_active=true`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
@@ -326,7 +324,7 @@ func (s *UsersStore) GetByEmail(ctx context.Context, email string ) (*User,error
 	)
 
 	if err != nil {
-		switch err{
+		switch err {
 		case sql.ErrNoRows:
 			return nil, ErrNotFound
 		default:
@@ -334,5 +332,5 @@ func (s *UsersStore) GetByEmail(ctx context.Context, email string ) (*User,error
 		}
 	}
 
-	return user,err
+	return user, err
 }

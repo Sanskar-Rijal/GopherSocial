@@ -63,15 +63,15 @@ func main() {
 		},
 		auth: authConfig{
 			basic: basicConfig{
-				username: env.GetString("USERNAME","hehe"),
-				password: env.GetString("PASSWORD","hisans"),
+				username: env.GetString("USERNAME", "hehe"),
+				password: env.GetString("PASSWORD", "hisans"),
 			},
-		token: tokenConfig{
-			secret: env.GetString("JWT_SECRET","enter-your-secret"),
-			exp: time.Hour * 24 * 3,
-			iss: env.GetString("ISSUED_BY","april"),
-			aud: env.GetString("AUDIENCE","april"),
-		},
+			token: tokenConfig{
+				secret: env.GetString("JWT_SECRET", "enter-your-secret"),
+				exp:    time.Hour * 24 * 3,
+				iss:    env.GetString("ISSUED_BY", "april"),
+				aud:    env.GetString("AUDIENCE", "april"),
+			},
 		},
 	}
 
@@ -114,13 +114,12 @@ func main() {
 		cfg.auth.token.iss,
 		cfg.auth.token.aud,
 	)
-	
 
 	app := &application{
-		config: cfg,
-		store:  store,
-		logger: logger,
-		mailer: mailer,
+		config:        cfg,
+		store:         store,
+		logger:        logger,
+		mailer:        mailer,
 		authenticator: jwtAuthenticator,
 	}
 

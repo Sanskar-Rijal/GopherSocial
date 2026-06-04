@@ -16,10 +16,10 @@ import (
 )
 
 type application struct {
-	config config
-	store  store.Storage
-	logger *zap.SugaredLogger
-	mailer mailer.Client
+	config        config
+	store         store.Storage
+	logger        *zap.SugaredLogger
+	mailer        mailer.Client
 	authenticator auth.Authenticator
 }
 
@@ -29,24 +29,24 @@ type config struct {
 	env    string
 	apiURL string
 	mail   mailConfig
-	auth  authConfig 
+	auth   authConfig
 }
 
 type authConfig struct {
-	basic basicConfig 
+	basic basicConfig
 	token tokenConfig
 }
 
 type basicConfig struct {
-	username string 
+	username string
 	password string
 }
 
 type tokenConfig struct {
 	secret string
-	exp time.Duration 
-	iss string 
-	aud string 
+	exp    time.Duration
+	iss    string
+	aud    string
 }
 
 type mailConfig struct {
@@ -93,7 +93,7 @@ func (app *application) mount() http.Handler {
 
 		//Basic authentication
 		r.Group(func(r chi.Router) {
-			//using middleware 
+			//using middleware
 			r.Use(app.BasicAuthMiddleware())
 			r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
 		})
@@ -102,8 +102,8 @@ func (app *application) mount() http.Handler {
 		r.Route("/authentication", func(r chi.Router) {
 			r.Post("/user", app.registerUserHandler)
 
-			//login user 
-			r.Post("/login",app.LoginUserHandler)
+			//login user
+			r.Post("/login", app.LoginUserHandler)
 		})
 
 		//comments
