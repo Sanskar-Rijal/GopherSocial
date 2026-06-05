@@ -15,6 +15,12 @@ func getPostFromContext(r *http.Request) *store.Post {
 	return post
 }
 
+//getting current i.e self user from context
+func getselfFromContext(r *http.Request) *store.User{
+	user, _ := r.Context().Value(SelfCtx).(*store.User)
+	return user
+}
+
 type CreatePostPayload struct {
 	Title   string   `json:"title" validate:"required,max=1000"`
 	Content string   `json:"content" validate:"required,max=500"`
@@ -41,7 +47,8 @@ type createPostHandlerResponse = SuccessResponse[store.Post]
 // Create Post
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 
-	var userId int64 = 1
+	//var userId int64 = 1
+	user := getselfFromContext(r)
 
 	var payload CreatePostPayload
 
@@ -63,7 +70,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		Title:   payload.Title,
 		Tags:    payload.Tags,
 		//TODO : we will get user id using JWT later on
-		UserId: userId,
+		UserId: user.ID,
 	}
 
 	ctx := r.Context()

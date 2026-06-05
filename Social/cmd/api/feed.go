@@ -47,9 +47,10 @@ func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	ctx := r.Context()
-	var userID int64 = 1 //get from JWT later
+	//var userID int64 = 1 //get from JWT later
+	userID := getselfFromContext(r)
 
-	posts, err := app.store.Posts.GetUserFeed(ctx, userID, feedQuery)
+	posts, err := app.store.Posts.GetUserFeed(ctx, userID.ID, feedQuery)
 
 	if err != nil {
 		app.internalServerError(w, r, err)

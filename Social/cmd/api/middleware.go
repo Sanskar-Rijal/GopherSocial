@@ -9,7 +9,6 @@ import (
 	"social/internal/store"
 	"strconv"
 	"strings"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -21,6 +20,9 @@ const PostCtx postkey = "post"
 type userkey string
 
 const UserCtx userkey = "user"
+
+type selfKey string 
+const SelfCtx selfKey = "self"
 
 // middleware to fetch post and put it into the context of the request so that we can use it in the handlers
 func (app *application) postContextMiddleware(next http.Handler) http.Handler {
@@ -190,7 +192,7 @@ func (app *application) protect(next http.Handler) http.Handler{
 		}
 
 		//Store the. user in context 
-		ctx = context.WithValue(ctx,UserCtx, user)
+		ctx = context.WithValue(ctx,SelfCtx, user)
 		next.ServeHTTP(w,r.WithContext(ctx))
 	} )
 }

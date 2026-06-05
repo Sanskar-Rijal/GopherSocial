@@ -108,6 +108,8 @@ func (app *application) mount() http.Handler {
 
 		//comments
 		r.Route("/comments", func(r chi.Router) {
+			//protect middleware to protect posts 
+			r.Use(app.protect)
 			r.Post("/", app.addCommentHandler)
 
 			r.Route("/{commentID}", func(r chi.Router) {
@@ -118,6 +120,8 @@ func (app *application) mount() http.Handler {
 
 		//creating request for post (add, delete, edit etc)
 		r.Route("/posts", func(r chi.Router) {
+			//protect middleware to protect posts 
+			r.Use(app.protect)
 			//create post
 			r.Post("/", app.createPostHandler)
 			//get post by id
@@ -137,6 +141,8 @@ func (app *application) mount() http.Handler {
 
 			r.Route("/{userID}", func(r chi.Router) {
 				//using middleware to fetch user from url
+				//protect middleware to protect posts 
+				r.Use(app.protect)
 				r.Use(app.userContextMiddleware)
 
 				r.Get("/", app.getUserByIdHandler)
@@ -150,6 +156,7 @@ func (app *application) mount() http.Handler {
 
 			//user feed
 			r.Group(func(r chi.Router) {
+				r.Use(app.protect)
 				r.Get("/feed", app.getUserFeedHandler) //"/v1/users/feed"
 			})
 		})

@@ -33,7 +33,8 @@ type addCommentHandlerResponse = SuccessResponse[store.Comment]
 // Add Comments to the post
 func (app *application) addCommentHandler(w http.ResponseWriter, r *http.Request) {
 	//to do via jwt later on
-	var userId int64 = 1
+	//var userId int64 = 1
+	userId := getselfFromContext(r)
 
 	var payload CreateCommentPayload
 
@@ -51,7 +52,7 @@ func (app *application) addCommentHandler(w http.ResponseWriter, r *http.Request
 	}
 	comment := &store.Comment{
 		PostID:  payload.PostID,
-		UserID:  userId,
+		UserID:  userId.ID,
 		Content: payload.Content,
 	}
 

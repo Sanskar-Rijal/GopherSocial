@@ -88,16 +88,17 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 
 	//this is you, you are followiing someone else so you are the follower and the
 	//user in the url is the one you are following
-	var followerId int64 = 1 //To get later from jwt
+	//var followerId int64 = 1 //To get later from jwt
+	followerID := getselfFromContext(r)
 
 	//you cannot follow yourself
-	if user.ID == followerId {
+	if user.ID == followerID.ID {
 		app.badRequestError(w, r, fmt.Errorf("You cannot follow yourself"))
 		return
 	}
 	ctx := r.Context()
 
-	if err := app.store.Followers.FollowUser(ctx, followerId, user.ID); err != nil {
+	if err := app.store.Followers.FollowUser(ctx, followerID.ID, user.ID); err != nil {
 		switch {
 		case errors.Is(err, store.ErrConflict):
 			app.badRequestError(w, r, fmt.Errorf("You have already followed this user"))
@@ -132,17 +133,19 @@ func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Reque
 	user := getUserFromContext(r)
 
 	//this is you, you are unfollowing someone else so you were the follower
-	var followerId int64 = 1 //To get later from jwt
+	//var followerId int64 = 1 //To get later from jwt
+
+	followerID := getselfFromContext(r)
 
 	//you cannot unfolow yourself
-	if user.ID == followerId {
+	if user.ID == followerID.ID {
 		app.badRequestError(w, r, fmt.Errorf("You cannot unfollow yourself"))
 		return
 	}
 
 	ctx := r.Context()
 
-	if err := app.store.Followers.UnFollowUser(ctx, followerId, user.ID); err != nil {
+	if err := app.store.Followers.UnFollowUser(ctx, followerID.ID, user.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
