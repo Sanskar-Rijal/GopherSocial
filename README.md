@@ -26,6 +26,7 @@ Social media backend built with Go. Features REST APIs for users, posts, comment
 - Database migrations
 - Hot reload with Air
 - Containerized with Docker
+- We will be adding Redis for user profile caching.
 
 ---
 
