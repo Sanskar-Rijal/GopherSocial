@@ -130,8 +130,8 @@ func (app *application) mount() http.Handler {
 				r.Use(app.postContextMiddleware)
 				//routes
 				r.Get("/", app.getPostByIdHandler)
-				r.Delete("/", app.deletePostHandler)
-				r.Patch("/", app.updatePostHandler)
+				r.Delete("/", app.checkPostOwnerShip("admin",app.deletePostHandler))
+				r.Patch("/", app.checkPostOwnerShip("moderator" ,app.updatePostHandler))
 			})
 		})
 		//users

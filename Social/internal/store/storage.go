@@ -42,6 +42,11 @@ type Storage struct {
 		GetFollowers(context.Context, int64) ([]Cuser, error)
 		GetFollowing(context.Context, int64) ([]Cuser, error)
 	}
+
+	Roles interface{
+		GetByName(context.Context, string) (*Role, error)
+	}
+
 }
 
 func NewPostgresStorage(db *sql.DB) Storage {
@@ -50,6 +55,7 @@ func NewPostgresStorage(db *sql.DB) Storage {
 		Users:     &UsersStore{db: db},
 		Comments:  &CommentStore{db: db},
 		Followers: &FollowerStore{db: db},
+		Roles:     &RoleStore{db: db},
 	}
 }
 

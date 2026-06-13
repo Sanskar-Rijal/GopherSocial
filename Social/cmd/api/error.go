@@ -83,3 +83,15 @@ func (app *application) unAuthorizedBasicError(w http.ResponseWriter, r *http.Re
 		"env":     app.config.env,
 	})
 }
+
+
+
+func (app *application) forbiddenError(w http.ResponseWriter, r *http.Request, err error){
+		app.logger.Warnf("unAuthorizedBasicError basic forbiddenError error", "method", r.Method, "path", r.URL.Path, "error", err)
+
+		writeJson(w, http.StatusForbidden, map[string]string{
+		"status":  "false",
+		"message": err.Error(),
+		"env":     app.config.env,
+	})
+}

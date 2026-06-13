@@ -24,6 +24,7 @@ const UserCtx userkey = "user"
 type selfKey string 
 const SelfCtx selfKey = "self"
 
+
 // middleware to fetch post and put it into the context of the request so that we can use it in the handlers
 func (app *application) postContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -195,4 +196,48 @@ func (app *application) protect(next http.Handler) http.Handler{
 		ctx = context.WithValue(ctx,SelfCtx, user)
 		next.ServeHTTP(w,r.WithContext(ctx))
 	} )
+}
+
+//middleware for authorization, Check post ownership 
+func (app *application) checkPostOwnerShip(requiredRole string ,next http.HandlerFunc) http.HandlerFunc{
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		//get user from jwt 
+		user  := getselfFromContext(r)
+		post := getPostFromContext(r)
+
+		//if the post belongs to user allow it
+		if (user.ID == post.UserId){
+			next.ServeHTTP(w,r)
+			return 
+		}
+		ctx := r.Context()
+		//the post doesn't belong to user so we check roles
+		allowed, err  := app.checkRolePrecedence(ctx, user, requiredRole)
+
+		if err != nil {
+			app.internalServerError(w,r, err)
+			return
+		}
+
+		if !allowed {
+			app.forbiddenError(w,r, fmt.Errorf("You are not allowed to Perform this action"))
+			return 
+		}
+
+		//if everything's right go to the next middleware 
+		next.ServeHTTP(w,r)
+	})
+}
+
+//middleware for checking roles 
+func (app *application) checkRolePrecedence(ctx context.Context, user *store.User, roleName string)(bool, error){
+	role, err := app.store.Roles.GetByName(ctx, roleName)
+
+	if err != nil {
+		return false, err
+	}
+	//role.Level gives us what permission we need to delete the role
+	//check if user has higher level role than specified role
+	return user.Role.Level >= role.Level, nil 
 }
