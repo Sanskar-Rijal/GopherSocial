@@ -7,6 +7,7 @@ import (
 	"social/internal/auth"
 	"social/internal/mailer"
 	"social/internal/store"
+	"social/internal/store/cache"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -18,6 +19,7 @@ import (
 type application struct {
 	config        config
 	store         store.Storage
+	cacheStorage  cache.Storage
 	logger        *zap.SugaredLogger
 	mailer        mailer.Client
 	authenticator auth.Authenticator
@@ -30,6 +32,14 @@ type config struct {
 	apiURL string
 	mail   mailConfig
 	auth   authConfig
+	redisCfg redisConfig
+}
+
+type redisConfig struct {
+	addr string 
+	pw string
+	db int 
+	enabled bool
 }
 
 type authConfig struct {
@@ -101,7 +111,6 @@ func (app *application) mount() http.Handler {
 		//Public Routes
 		r.Route("/authentication", func(r chi.Router) {
 			r.Post("/user", app.registerUserHandler)
-
 			//login user
 			r.Post("/login", app.LoginUserHandler)
 		})

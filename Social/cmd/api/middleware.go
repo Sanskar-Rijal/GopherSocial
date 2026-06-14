@@ -178,9 +178,11 @@ func (app *application) protect(next http.Handler) http.Handler{
 		claims, _ := jwtToken.Claims.(jwt.MapClaims)
 		userID := int64(claims["sub"].(float64))
 
-		ctx := r.Context()
-		user,err := app.store.Users.GetById(ctx,userID)
-
+		 ctx := r.Context()
+		 //Get user from redis cache 
+		// user,err := app.store.Users.GetById(ctx,userID)
+		user , err := app.getUserFromCache(ctx, userID)
+		
 		if err != nil {
 			switch  {
 			case errors.Is(err, store.ErrConflict):
@@ -196,6 +198,32 @@ func (app *application) protect(next http.Handler) http.Handler{
 		ctx = context.WithValue(ctx,SelfCtx, user)
 		next.ServeHTTP(w,r.WithContext(ctx))
 	} )
+}
+
+//function to get user and store it in cache 
+func (app *application) getUserFromCache(ctx context.Context, userID int64) (*store.User, error){
+	//1) if redis is disabled give data from database
+	if !app.config.redisCfg.enabled{
+		return app.store.Users.GetById(ctx,userID)
+	}
+	//2) If redis is enabled search for the data and return it
+	user, err := app.cacheStorage.Users.GetUser(ctx,userID)
+	if err != nil {
+		return nil, err
+	}
+
+	//3) If user == nil then we must add it in db and fetch from db 
+	if user == nil {
+		user, err = app.store.Users.GetById(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+		//4) Store the data in cache 
+		if err := app.cacheStorage.Users.SetUser(ctx, user); err != nil {
+			return nil, err
+		}
+	}
+	return user,nil
 }
 
 //middleware for authorization, Check post ownership 

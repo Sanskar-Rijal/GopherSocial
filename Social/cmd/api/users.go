@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"social/internal/store"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -31,30 +32,32 @@ type getUserByIdHandlerResponse = SuccessResponse[store.User]
 //	@Security		ApiKeyAuth
 //	@Router			/users/{userID} [get]
 func (app *application) getUserByIdHandler(w http.ResponseWriter, r *http.Request) {
-	// idParam := chi.URLParam(r,"userID")
-	// userId, err := strconv.ParseInt(idParam, 10, 64)
+	idParam := chi.URLParam(r,"userID")
+	userId, err := strconv.ParseInt(idParam, 10, 64)
 
-	// if err != nil {
-	// 	app.badRequestError(w,r,err)
-	// 	return
-	// }
+	if err != nil {
+		app.badRequestError(w,r,err)
+		return
+	}
 
 	// ctx := r.Context()
 
 	// user, err := app.store.Users.GetById(ctx, userId)
+	//user := getUserFromContext(r)
 
-	// if err != nil {
-	// 	switch {
-	// 	case errors.Is(err, store.ErrNotFound):
-	// 		app.notFoundError(w,r,err)
-	// 		return
-	// 	default:
-	// 		app.internalServerError(w,r,err)
-	// 		return
-	// 	}
-	// }
+	//GET user from cache if stored
+	user, err := app.getUserFromCache(r.Context(), userId)
 
-	user := getUserFromContext(r)
+	if err != nil {
+		switch {
+		case errors.Is(err, store.ErrNotFound):
+			app.notFoundError(w,r,err)
+			return
+		default:
+			app.internalServerError(w,r,err)
+			return
+		}
+	}
 
 	data := map[string]any{
 		"status":  "true",

@@ -6,8 +6,10 @@ import (
 	"social/internal/env"
 	"social/internal/mailer"
 	"social/internal/store"
+	"social/internal/store/cache"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -73,6 +75,12 @@ func main() {
 				aud:    env.GetString("AUDIENCE", "april"),
 			},
 		},
+		redisCfg: redisConfig{
+			addr: env.GetString("REDIS_ADDR",""),
+			pw : env.GetString("REDIS_PASS",""),
+			db: env.GetInt("REDIS_DATABASE",0),
+			enabled: env.GetBool("REDIS_STATE", false),
+		},
 	}
 
 	//Logger
@@ -104,7 +112,22 @@ func main() {
 	defer db.Close()
 	logger.Info("Database Connection is live")
 
+	//Redis cache, only if it's enabled
+	var rdb *redis.Client
+	if cfg.redisCfg.enabled {
+
+		rdb = cache.NewRedisClient(
+		cfg.redisCfg.addr,
+		cfg.redisCfg.pw,
+		cfg.redisCfg.db,
+		)
+		logger.Info("redis cache connection established")
+		defer rdb.Close()
+	}
+	
 	store := store.NewPostgresStorage(db)
+
+	cacheStorage := cache.NewRedisStorage(rdb)
 
 	mailer := mailer.NewGmailMailer(cfg.mail.fromEmail, cfg.mail.password)
 
@@ -118,9 +141,11 @@ func main() {
 	app := &application{
 		config:        cfg,
 		store:         store,
+		cacheStorage:  cacheStorage,
 		logger:        logger,
 		mailer:        mailer,
 		authenticator: jwtAuthenticator,
+
 	}
 
 	mux := app.mount()
