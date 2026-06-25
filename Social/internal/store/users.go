@@ -246,6 +246,7 @@ func (s *UsersStore) getUserFromInvitation(ctx context.Context, tx *sql.Tx, toke
 }
 
 func (s *UsersStore) Update(ctx context.Context, tx *sql.Tx, user *User) error {
+	
 	query := `update users set username=$1,email=$2,is_active =$3 where id =$4`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)

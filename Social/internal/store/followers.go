@@ -97,6 +97,7 @@ func (s *FollowerStore) GetFollowing(ctx context.Context, userId int64) ([]Cuser
 	query := `SELECT u.id, u.username FROM users AS u INNER JOIN followers AS f ON 
 	f.user_id = u.id WHERE f.follower_id =$1`
 
+	
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
@@ -126,3 +127,4 @@ func (s *FollowerStore) GetFollowing(ctx context.Context, userId int64) ([]Cuser
 	}
 	return following, nil
 }
+

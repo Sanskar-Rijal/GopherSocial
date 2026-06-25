@@ -145,7 +145,6 @@ func main() {
 		logger:        logger,
 		mailer:        mailer,
 		authenticator: jwtAuthenticator,
-
 	}
 
 	mux := app.mount()

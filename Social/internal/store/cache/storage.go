@@ -11,7 +11,7 @@ type Storage struct{
 	Users interface {
 		GetUser(context.Context, int64) (*store.User, error)
 		SetUser(context.Context, *store.User) error 
-		// Delete(context.Context, int64)
+		DeleteUser(context.Context, int64)
 	}
 }
 
