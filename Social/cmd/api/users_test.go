@@ -9,6 +9,10 @@ func TestGetUser(t *testing.T){
 
 	app := newTestApplication(t)
 	mux := app.mount()
+	testToken, err := app.authenticator.GenerateToken(nil)
+	if err != nil{
+		t.Fatal(err)
+	}
 	t.Run("Should not allow unaunthenticated Requst", func (t *testing.T){
 		//check for 401 code 
 		req, err := http.NewRequest(http.MethodGet, "/v1/users/1",nil)
@@ -20,8 +24,24 @@ func TestGetUser(t *testing.T){
 		// rr := httptest.NewRecorder()
 		// mux.ServeHTTP(rr, req)
 		rr := executeRequests(req, mux)
-		if rr.Code != http.StatusUnauthorized {
-			t.Errorf("expected the response code  to be %d  and we got %d ",http.StatusUnauthorized, rr.Code)
-		}
+		// if rr.Code != http.StatusUnauthorized {
+		// 	t.Errorf("expected the response code  to be %d  and we got %d ",http.StatusUnauthorized, rr.Code)
+		// }
+		checkResponseCode(t, http.StatusUnauthorized, rr.Code)
 	})
+
+
+	t.Run("Should allow authenticated requests", func(t *testing.T){
+		req, err := http.NewRequest(http.MethodGet, "/v1/users/1",nil)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		//creating fake https response writer 
+		req.Header.Set("Authorization","Bearer " + testToken)
+		rr := executeRequests(req,mux)
+		checkResponseCode(t, http.StatusUnauthorized, rr.Code)
+	})
+
 }
