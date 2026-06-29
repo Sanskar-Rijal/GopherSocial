@@ -239,12 +239,26 @@ func (app *application) run(mux http.Handler) error {
 	}()
 	app.logger.Infow("Server has started at port", "addr", app.config.addr, "env", app.config.env)
 
+	// start server — blocks here
+    // server runs until Shutdown() is called
 	err := server.ListenAndServe()
+
+	// when Shutdown() is called
+    // ListenAndServe returns http.ErrServerClosed
+    // that is NORMAL — not a real error
 	if !errors.Is(err, http.ErrServerClosed){
 		return err
 	}
+	 // if ErrServerClosed — continue below
 
+	// wait for shutdown goroutine to finish
+    // BLOCKS here until goroutine sends result
 	err = <-shutdown
+
+	 //      ↑
+    //  waiting for goroutine to send result
+    //  goroutine sends: shutdown <- server.Shutdown(ctx)
+    //  this unblocks
 
 	if err != nil {
 		return err
