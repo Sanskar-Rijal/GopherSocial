@@ -1,13 +1,18 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
 	"social/docs"
 	"social/internal/auth"
 	"social/internal/mailer"
 	"social/internal/store"
 	"social/internal/store/cache"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -181,6 +186,13 @@ func (app *application) run(mux http.Handler) error {
 	docs.SwaggerInfo.Host = app.config.apiURL
 	docs.SwaggerInfo.BasePath = "/v1"
 
+	//GraceFul server Shutdown 
+	// channel that carries the shutdown error
+    // main goroutine waits on this
+	shutdown := make(chan error)
+	//           ↑
+    //    create the walkie talkie pipe
+
 	server := &http.Server{
 		Addr:         app.config.addr,
 		Handler:      mux,
@@ -188,6 +200,59 @@ func (app *application) run(mux http.Handler) error {
 		ReadTimeout:  time.Second * 10,
 		IdleTimeout:  time.Minute,
 	}
+
+    // launch a GOROUTINE — runs in background
+    // main goroutine continues below
+	go func(){
+
+		// channel that receives OS signals
+        // like ctrl+c
+		quit := make(chan os.Signal, 1)
+		//                          ↑
+        //                    buffer of 1 — dont miss the signal
+
+		 // tell Go which signals to listen for
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		 //                    ↑               ↑
+        //                 ctrl+c          kill command from terminal
+        //                                 docker stop sends this
+
+		// BLOCK here — wait for signal
+        // does nothing until ctrl+c or kill is received
+		s := <- quit
+		//      ↑
+        //   waiting... waiting... waiting...
+        //   user presses ctrl+c
+        //   s = the signal received
+
+	    // give server 5 seconds to finish current requests
+		ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+		defer cancel()
+
+		app.logger.Infow("signal caught", "signal", s.String())
+
+		// tell server to shutdown gracefully
+        // waits for current requests to finish (max 5 seconds)
+        // then sends result into shutdown channel
+		shutdown <-  server.Shutdown(ctx)
+
+	}()
 	app.logger.Infow("Server has started at port", "addr", app.config.addr, "env", app.config.env)
-	return server.ListenAndServe()
+
+	err := server.ListenAndServe()
+	if !errors.Is(err, http.ErrServerClosed){
+		return err
+	}
+
+	err = <-shutdown
+
+	if err != nil {
+		return err
+	}
+
+	// return server.ListenAndServe()
+
+	app.logger.Infow("server has stopped", "addr", app.config.addr, "env", app.config.env)
+
+	return nil 
 }
