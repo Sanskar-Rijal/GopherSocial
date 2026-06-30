@@ -10,6 +10,7 @@ import (
 	"social/docs"
 	"social/internal/auth"
 	"social/internal/mailer"
+	"social/internal/ratelimiter"
 	"social/internal/store"
 	"social/internal/store/cache"
 	"syscall"
@@ -28,6 +29,7 @@ type application struct {
 	logger        *zap.SugaredLogger
 	mailer        mailer.Client
 	authenticator auth.Authenticator
+	rateLimiter   ratelimiter.Limiter
 }
 
 type config struct {
@@ -38,6 +40,7 @@ type config struct {
 	mail   mailConfig
 	auth   authConfig
 	redisCfg redisConfig
+	rateLimiter ratelimiter.Config
 }
 
 type redisConfig struct {
@@ -89,6 +92,9 @@ func (app *application) mount() http.Handler {
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
+
+	//ratelimiter middleare 
+	router.Use(app.RateLimiterMiddleware)
 
 	//when no route matches then
 	router.NotFound(func(w http.ResponseWriter, r *http.Request) {

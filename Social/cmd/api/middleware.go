@@ -269,3 +269,26 @@ func (app *application) checkRolePrecedence(ctx context.Context, user *store.Use
 	//check if user has higher level role than specified role
 	return user.Role.Level >= role.Level, nil 
 }
+
+//middleware for rateLimiter 
+func (app *application) RateLimiterMiddleware(next http.Handler) http.Handler{
+	return http.HandlerFunc( func(w http.ResponseWriter, r *http.Request){
+		
+		// skip if rate limiter is disabled
+        if !app.config.rateLimiter.Enabled {
+            next.ServeHTTP(w, r)
+            return
+        }
+
+		 // get client IP
+        // RealIP middleware  help us get ip of client
+        ip := r.RemoteAddr
+
+		 if allowed, retryAfter := app.rateLimiter.Allow(ip); !allowed {
+            app.rateLimitExceededResponse(w, r, retryAfter.String())
+            return
+        }
+
+		  next.ServeHTTP(w, r)
+	} )
+}

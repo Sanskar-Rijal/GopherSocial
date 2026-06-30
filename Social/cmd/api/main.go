@@ -5,6 +5,7 @@ import (
 	"social/internal/db"
 	"social/internal/env"
 	"social/internal/mailer"
+	"social/internal/ratelimiter"
 	"social/internal/store"
 	"social/internal/store/cache"
 	"time"
@@ -81,7 +82,17 @@ func main() {
 			db: env.GetInt("REDIS_DATABASE",0),
 			enabled: env.GetBool("REDIS_STATE", false),
 		},
+		rateLimiter: ratelimiter.Config{
+			RequestPerWindow : env.GetInt("RATE_LIMITER_REQUESTS_PER_WINDOW", 20),
+			TimeWindow: time.Second * 5,
+			Enabled:  env.GetBool("RATE_LIMITER_ENABLED", true),
+			
+		},
 	}
+	//Rate limiter 
+	rateLimiter := ratelimiter.NewFixedWindowLimiter(
+		cfg.rateLimiter.RequestPerWindow,
+		cfg.rateLimiter.TimeWindow)
 
 	//Logger
 	logger := zap.Must(zap.NewProduction()).Sugar()
@@ -115,7 +126,6 @@ func main() {
 	//Redis cache, only if it's enabled
 	var rdb *redis.Client
 	if cfg.redisCfg.enabled {
-
 		rdb = cache.NewRedisClient(
 		cfg.redisCfg.addr,
 		cfg.redisCfg.pw,
@@ -145,6 +155,7 @@ func main() {
 		logger:        logger,
 		mailer:        mailer,
 		authenticator: jwtAuthenticator,
+		rateLimiter: rateLimiter,
 	}
 
 	mux := app.mount()

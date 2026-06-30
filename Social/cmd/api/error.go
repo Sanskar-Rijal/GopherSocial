@@ -95,3 +95,19 @@ func (app *application) forbiddenError(w http.ResponseWriter, r *http.Request, e
 		"env":     app.config.env,
 	})
 }
+
+//Error for rateLimiter 
+func (app *application) rateLimitExceededResponse(w http.ResponseWriter, r *http.Request, retryAfter string) {
+
+    app.logger.Warnw("rate limit exceeded",
+        "method", r.Method,
+        "path", r.URL.Path,
+    )
+
+    w.Header().Set("Retry-After", retryAfter)
+
+    writeJson(w, http.StatusTooManyRequests, map[string]string{
+        "status":  "false",
+        "message": "rate limit exceeded, retry after: " + retryAfter,
+    })
+}
